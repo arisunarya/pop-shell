@@ -4,19 +4,28 @@ import type { ShellWindow } from './window.js';
 
 import * as Ecs from './ecs.js';
 import * as a from './arena.js';
-import * as utils from './utils.js';
 
 const Arena = a.Arena;
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 
-const ACTIVE_TAB = 'pop-shell-tab pop-shell-tab-active';
-const INACTIVE_TAB = 'pop-shell-tab pop-shell-tab-inactive';
-const URGENT_TAB = 'pop-shell-tab pop-shell-tab-urgent';
 const INACTIVE_TAB_STYLE = '#9B8E8A';
+const URGENT_TAB_COLOR = '#D00';
 
-export var TAB_HEIGHT: number = 24;
+export var TAB_HEIGHT: number = 12;
+
+/** Width of the active stack segment, in pixels. */
+const SEGMENT_ACTIVE_WIDTH = 28;
+
+/** Width of an inactive stack segment, in pixels. */
+const SEGMENT_INACTIVE_WIDTH = 12;
+
+/** Thickness of the stack segment line, in pixels. */
+const SEGMENT_LINE = 2;
+
+/** Gap between the window top edge and the floating stack indicator, in pixels. */
+const STACK_FLOAT_OFFSET = 3;
 
 interface Tab {
     active: boolean;
@@ -36,87 +45,38 @@ function stack_widgets_new(): StackWidgets {
         x_expand: true,
     });
 
-    tabs.get_layout_manager()?.set_homogeneous(true);
-
     return { tabs };
 }
 
-const ContainerButton = GObject.registerClass(
-    {
-        Signals: { activate: {} },
-    },
-    class ImageButton extends St.Button {
-        _init(icon: St.Icon) {
-            super._init({
-                child: icon,
-                x_expand: true,
-                y_expand: true,
-            });
-        }
-    },
-);
-
 interface TabButton extends St.Button {
+    bar: St.Widget;
     set_title: (title: string) => void;
 }
 
+// Minimal tab indicator: a thin clickable line segment.
+// No icon, title, or close button. The visible line is a solid child
+// bar, since St only parses a subset of CSS (no per-side border shorthand).
 const TabButton = GObject.registerClass(
     {
         Signals: { activate: {} },
     },
     class TabButton extends St.Button {
-        _init(window: ShellWindow) {
-            const icon = window.icon(window.ext, 24);
-            icon.set_x_align(Clutter.ActorAlign.START);
+        bar!: St.Widget;
 
-            const label = new St.Label({
-                y_expand: true,
-                x_align: Clutter.ActorAlign.START,
-                y_align: Clutter.ActorAlign.CENTER,
-                style: 'padding-left: 8px',
-            });
-
-            label.text = window.title();
-
-            const container = new St.BoxLayout({
-                y_expand: true,
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
-            const close_button = new ContainerButton(
-                new St.Icon({
-                    icon_name: 'window-close-symbolic',
-                    icon_size: 24,
-                    y_align: Clutter.ActorAlign.CENTER,
-                }),
-            );
-
-            close_button.connect('clicked', () => {
-                window.meta.delete(global.get_current_time());
-            });
-
-            close_button.set_x_align(Clutter.ActorAlign.END);
-            close_button.set_y_align(Clutter.ActorAlign.CENTER);
-
-            container.add_child(icon);
-            container.add_child(label);
-            container.add_child(close_button);
-
+        _init() {
             super._init({
-                child: container,
-                x_expand: true,
-                y_expand: true,
-                y_align: Clutter.ActorAlign.CENTER,
+                x_expand: false,
+                y_expand: false,
             });
 
-            this._title = label;
+            this.bar = new St.Widget({
+                x_expand: true,
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            this.set_child(this.bar);
         }
 
-        set_title(text: string) {
-            if (this._title) {
-                this._title.text = text;
-            }
-        }
+        set_title(_text: string) {}
     },
 );
 
@@ -175,7 +135,7 @@ export class Stack {
         const entity = window.entity;
         const active = Ecs.entity_eq(entity, this.active);
 
-        const button = new TabButton(window);
+        const button = new TabButton();
         const id = this.buttons.insert(button);
 
         let tab: Tab = { active, entity, signals: [], button: id, button_signal: null };
@@ -227,36 +187,21 @@ export class Stack {
         let id = 0;
 
         for (const [idx, component] of this.tabs.entries()) {
-            let name;
-
             this.window_exec(id, component.entity, (window) => {
                 const actor = window.meta.get_compositor_private();
 
                 if (Ecs.entity_eq(entity, component.entity)) {
                     this.active_id = id;
                     component.active = true;
-                    name = ACTIVE_TAB;
                     if (actor) actor.show();
                 } else {
                     component.active = false;
-                    name = INACTIVE_TAB;
                     if (actor) actor.hide();
                 }
 
                 let button = this.buttons.get(component.button);
                 if (button) {
-                    button.set_style_class_name(name);
-                    let tab_color = '';
-                    if (component.active) {
-                        let settings = this.ext.settings;
-                        let color_value = settings.hint_color_rgba();
-                        tab_color = `${color_value}; color: ${utils.is_dark(color_value) ? 'white' : 'black'}`;
-                    } else {
-                        tab_color = `${INACTIVE_TAB_STYLE}`;
-                    }
-
-                    const tab_border_radius = this.get_tab_border_radius(idx);
-                    button.set_style(`background: ${tab_color}; border-radius: ${tab_border_radius};`);
+                    this.paint_tab(button, component.active ? 'active' : 'inactive', idx);
                 }
             });
 
@@ -264,6 +209,26 @@ export class Stack {
         }
 
         this.reset_visibility(permitted);
+    }
+
+    /** Paints a tab segment as a thin pill line using the theme colors. */
+    private paint_tab(button: TabButton, state: 'active' | 'inactive' | 'urgent', idx: number) {
+        let color = INACTIVE_TAB_STYLE;
+        let width = SEGMENT_INACTIVE_WIDTH * this.ext.dpi;
+        if (state === 'active') {
+            color = this.ext.settings.hint_color_rgba();
+            width = SEGMENT_ACTIVE_WIDTH * this.ext.dpi;
+        } else if (state === 'urgent') {
+            color = URGENT_TAB_COLOR;
+        }
+
+        button.width = width;
+        button.set_style('background: transparent; border-width: 0; padding: 0; margin: 0;');
+
+        const tab_border_radius = this.get_tab_border_radius(idx);
+        button.bar.width = width;
+        button.bar.height = SEGMENT_LINE;
+        button.bar.set_style(`background-color: ${color}; border-radius: ${tab_border_radius};`);
     }
 
     // returns the tab button border radius based on it's order.
@@ -346,17 +311,10 @@ export class Stack {
     }
 
     private change_tab_color(tab: Tab) {
-        let settings = this.ext.settings;
         let button = this.buttons.get(tab.button);
         if (button) {
-            let tab_color = '';
-            if (Ecs.entity_eq(tab.entity, this.active)) {
-                let color_value = settings.hint_color_rgba();
-                tab_color = `background: ${color_value}; color: ${utils.is_dark(color_value) ? 'white' : 'black'}`;
-            } else {
-                tab_color = `background: ${INACTIVE_TAB_STYLE}`;
-            }
-            button.set_style(tab_color);
+            const idx = this.tabs.indexOf(tab);
+            this.paint_tab(button, Ecs.entity_eq(tab.entity, this.active) ? 'active' : 'inactive', idx);
         }
     }
 
@@ -637,17 +595,33 @@ export class Stack {
 
         this.tabs_height = TAB_HEIGHT * this.ext.dpi;
 
+        // Size each segment (active is wider, like the workspace indicator)
+        // and center the whole strip; it floats in the gap, taking no layout space.
+        let total_width = 0;
+        this.tabs.forEach((tab, idx) => {
+            const width =
+                idx === this.active_id
+                    ? SEGMENT_ACTIVE_WIDTH * this.ext.dpi
+                    : SEGMENT_INACTIVE_WIDTH * this.ext.dpi;
+            total_width += width;
+            const button = this.buttons.get(tab.button);
+            if (button) {
+                button.width = width;
+                button.height = this.tabs_height;
+            }
+        });
+
         this.stack_rect = {
-            x: rect.x,
-            y: rect.y - this.tabs_height,
-            width: rect.width,
+            x: rect.x + Math.max(0, (rect.width - total_width) / 2),
+            y: rect.y - this.tabs_height - STACK_FLOAT_OFFSET * this.ext.dpi,
+            width: Math.min(total_width, rect.width),
             height: this.tabs_height + rect.height,
         };
 
-        this.widgets.tabs.x = rect.x;
+        this.widgets.tabs.x = this.stack_rect.x;
         this.widgets.tabs.y = this.stack_rect.y;
         this.widgets.tabs.height = this.tabs_height;
-        this.widgets.tabs.width = rect.width;
+        this.widgets.tabs.width = this.stack_rect.width;
     }
 
     private watch_signals(comp: number, button: number, window: ShellWindow) {
@@ -670,12 +644,6 @@ export class Stack {
                     window.activate(false);
 
                     this.reposition();
-
-                    for (const comp of this.tabs) {
-                        this.buttons.get(comp.button)?.set_style_class_name(INACTIVE_TAB);
-                    }
-
-                    widget.set_style_class_name(ACTIVE_TAB);
                 }
             });
         });
@@ -696,7 +664,8 @@ export class Stack {
             window.meta.connect('notify::urgent', () => {
                 this.window_exec(comp, entity, (window) => {
                     if (!window.meta.has_focus()) {
-                        this.buttons.get(button)?.set_style_class_name(URGENT_TAB);
+                        const urgent_button = this.buttons.get(button);
+                        if (urgent_button) this.paint_tab(urgent_button, 'urgent', comp);
                     }
                 });
             }),

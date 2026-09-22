@@ -46,6 +46,12 @@ enum RESTACK_SPEED {
     NORMAL = 200,
 }
 
+/** Fixed width of the minimal top-edge active hint bar, in pixels. */
+const ACTIVE_HINT_BAR_WIDTH = 100;
+
+/** Fixed height of the minimal top-edge active hint bar, in pixels. */
+export const ACTIVE_HINT_BAR_HEIGHT = 1;
+
 interface X11Info {
     normal_hints: once_cell.OnceCell<lib.SizeHint | null>;
     wm_role_: once_cell.OnceCell<string | null>;
@@ -596,7 +602,7 @@ export class ShellWindow {
     }
 
     update_border_layout() {
-        let { x, y, width, height } = this.meta.get_frame_rect();
+        let { x, y, width } = this.meta.get_frame_rect();
 
         const border = this.border;
         let borderSize = this.border_size;
@@ -609,9 +615,14 @@ export class ShellWindow {
                 border.add_style_class_name('pop-shell-border-maximize');
             }
 
-            const stack_number = this.stack;
-            let dimensions = null;
+            // Minimal hint: a short bar centered on the top edge,
+            // instead of a rectangle around the window.
+            const thickness = ACTIVE_HINT_BAR_HEIGHT;
+            const barWidth = Math.min(ACTIVE_HINT_BAR_WIDTH, width);
 
+            let yOffset = thickness;
+
+            const stack_number = this.stack;
             if (stack_number !== null) {
                 const stack = this.ext.auto_tiler?.forest.stacks.get(stack_number);
                 if (stack) {
@@ -622,34 +633,16 @@ export class ShellWindow {
                         stack_tab_height = 0;
                     }
 
-                    dimensions = [
-                        x - borderSize,
-                        y - stack_tab_height - borderSize,
-                        width + 2 * borderSize,
-                        height + stack_tab_height + 2 * borderSize,
-                    ];
+                    yOffset += stack_tab_height;
                 }
-            } else {
-                dimensions = [x - borderSize, y - borderSize, width + 2 * borderSize, height + 2 * borderSize];
             }
 
-            if (dimensions) {
-                [x, y, width, height] = dimensions;
+            const workspace = this.meta.get_workspace();
 
-                const workspace = this.meta.get_workspace();
+            if (workspace === null) return;
 
-                if (workspace === null) return;
-
-                const screen = workspace.get_work_area_for_monitor(this.meta.get_monitor());
-
-                if (screen) {
-                    width = Math.min(width, screen.x + screen.width);
-                    height = Math.min(height, screen.y + screen.height);
-                }
-
-                border.set_position(x, y);
-                border.set_size(width, height);
-            }
+            border.set_position(x + (width - barWidth) / 2, y - yOffset);
+            border.set_size(barWidth, thickness);
         }
     }
 
@@ -658,7 +651,9 @@ export class ShellWindow {
         const color_value = settings.hint_color_rgba();
         const radius_value = settings.active_hint_border_radius();
         if (this.border) {
-            this.border.set_style(`border-color: ${color_value}; border-radius: ${radius_value}px;`);
+            this.border.set_style(
+                `background-color: ${color_value}; border-width: 0px; border-radius: ${radius_value}px;`,
+            );
         }
     }
 

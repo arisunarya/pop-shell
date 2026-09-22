@@ -1147,12 +1147,6 @@ export class Ext extends Ecs.System<ExtEvent> {
                     const forest = this.auto_tiler.forest;
                     const fork = forest.forks.get(fork_entity);
                     if (fork) {
-                        if (win.stack) {
-                            const tab_dimension = this.dpi * stack.TAB_HEIGHT;
-                            crect.height += tab_dimension;
-                            crect.y -= tab_dimension;
-                        }
-
                         let top_level = forest.find_toplevel(this.workspace_id());
                         if (top_level) {
                             crect.clamp((forest.forks.get(top_level) as Fork).area);

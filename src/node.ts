@@ -228,11 +228,9 @@ export class Node {
                 break;
             // Stack
             case 3:
-                const size = ext.dpi * 4;
-
+                // No space is reserved for the stack indicator: it floats
+                // above the window, so stacked windows keep the full area.
                 this.inner.rect = area.clone();
-                this.inner.rect.y += size * 6;
-                this.inner.rect.height -= size * 6;
 
                 for (const entity of this.inner.entities) {
                     record(entity, parent, this.inner.rect);
