@@ -11,7 +11,6 @@ Package: pop-shell
 Architecture: all
 Depends:
     ${misc:Depends},
-    pop-launcher,
     pop-shell-shortcuts,
     fd-find
 Recommends: pop-shell-plugin-system76-power, system76-scheduler

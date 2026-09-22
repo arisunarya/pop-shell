@@ -9,7 +9,6 @@ import * as log from './log.js';
 import * as focus from './focus.js';
 
 interface AppWidgets {
-    fullscreen_launcher: any;
     stacking_with_mouse: any;
     inner_gap: any;
     mouse_cursor_follows_active_window: any;
@@ -102,12 +101,6 @@ function settings_dialog_new(): Gtk.Container {
         ext.set_mouse_cursor_focus_location(active_id);
     });
 
-    app.fullscreen_launcher.set_active(ext.fullscreen_launcher());
-    app.fullscreen_launcher.connect('state-set', (_widget: any, state: boolean) => {
-        ext.set_fullscreen_launcher(state);
-        Settings.sync();
-    });
-
     app.stacking_with_mouse.set_active(ext.stacking_with_mouse());
     app.stacking_with_mouse.connect('state-set', (_widget: any, state: boolean) => {
         ext.set_stacking_with_mouse(state);
@@ -162,11 +155,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         xalign: 0.0,
     });
 
-    const fullscreen_launcher_label = new Gtk.Label({
-        label: 'Allow launcher over fullscreen window',
-        xalign: 0.0,
-    });
-
     const stacking_with_mouse = new Gtk.Label({
         label: 'Allow stacking with mouse',
         xalign: 0.0,
@@ -182,7 +170,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
     const settings = {
         inner_gap,
         outer_gap,
-        fullscreen_launcher: new Gtk.Switch({ halign: Gtk.Align.END }),
         stacking_with_mouse: new Gtk.Switch({ halign: Gtk.Align.END }),
         smart_gaps: new Gtk.Switch({ halign: Gtk.Align.END }),
         snap_to_grid: new Gtk.Switch({ halign: Gtk.Align.END }),
@@ -202,9 +189,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
 
     grid.attach(smart_label, 0, 2, 1, 1);
     grid.attach(settings.smart_gaps, 1, 2, 1, 1);
-
-    grid.attach(fullscreen_launcher_label, 0, 3, 1, 1);
-    grid.attach(settings.fullscreen_launcher, 1, 3, 1, 1);
 
     grid.attach(stacking_with_mouse, 0, 4, 1, 1);
     grid.attach(settings.stacking_with_mouse, 1, 4, 1, 1);
