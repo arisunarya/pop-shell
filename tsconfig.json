@@ -16,7 +16,8 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "moduleResolution": "NodeNext",
-        "module": "NodeNext"
+        "module": "NodeNext",
+        "skipLibCheck": true
     },
     "include": [
         "src/*.ts"

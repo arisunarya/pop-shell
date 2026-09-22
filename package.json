@@ -1,3 +1,13 @@
 {
-    "type": "module"
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "compile": "env PROJECTS=\"color_dialog floating_exceptions\" ./scripts/transpile.sh"
+    },
+    "devDependencies": {
+        "@girs/gjs": "^5.4.0",
+        "@girs/gnome-shell": "^50.0.4",
+        "typescript": "^7.0.2"
+    }
 }
