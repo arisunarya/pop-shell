@@ -71,7 +71,6 @@ export class Indicator {
 
         bm.addMenuItem(menu_separator(''));
         bm.addMenuItem(shortcuts(bm));
-        bm.addMenuItem(settings_button(bm));
         bm.addMenuItem(menu_separator(''));
 
         if (!Utils.is_wayland()) {
@@ -96,8 +95,20 @@ function menu_separator(text: any): any {
     return new PopupSeparatorMenuItem(text);
 }
 
-function settings_button(menu: any): any {
-    let item = new PopupMenuItem(_('View All'));
+function shortcuts(menu: any): any {
+    let label = new St.Label({ text: _('Shortcuts') });
+    label.set_x_expand(true);
+
+    let icon = new St.Icon({ icon_name: 'go-next-symbolic', icon_size: 16 });
+    icon.set_style('margin-left: 8px;');
+
+    let widget = new St.BoxLayout({ vertical: false });
+    widget.add_child(label);
+    widget.add_child(icon);
+    widget.set_x_expand(true);
+
+    let item = new PopupBaseMenuItem();
+    item.add_child(widget);
     item.connect('activate', () => {
         let path: string | null = GLib.find_program_in_path('pop-shell-shortcuts');
         if (path) {
@@ -109,8 +120,6 @@ function settings_button(menu: any): any {
         menu.close();
     });
 
-    item.label.get_clutter_text().set_margin_left(12);
-
     return item;
 }
 
@@ -119,6 +128,7 @@ function floating_window_exceptions(ext: Ext, menu: any): any {
     label.set_x_expand(true);
 
     let icon = new St.Icon({ icon_name: 'go-next-symbolic', icon_size: 16 });
+    icon.set_style('margin-left: 8px;');
 
     let widget = new St.BoxLayout({ vertical: false });
     widget.add_child(label);
@@ -137,53 +147,6 @@ function floating_window_exceptions(ext: Ext, menu: any): any {
     });
 
     return base;
-}
-
-function shortcuts(menu: any): any {
-    let layout_manager = new Clutter.GridLayout({ orientation: Clutter.Orientation.HORIZONTAL });
-    let widget = new St.Widget({ layout_manager, x_expand: true });
-
-    let item = new PopupBaseMenuItem();
-    item.add_child(widget);
-    item.connect('activate', () => {
-        let path: string | null = GLib.find_program_in_path('pop-shell-shortcuts');
-        if (path) {
-            spawn([path]);
-        } else {
-            spawn(['xdg-open', 'https://support.system76.com/articles/pop-keyboard-shortcuts/']);
-        }
-
-        menu.close();
-    });
-
-    function create_label(text: string): any {
-        return new St.Label({ text });
-    }
-
-    function create_shortcut_label(text: string): any {
-        let label = create_label(text);
-        label.set_x_align(Clutter.ActorAlign.END);
-        return label;
-    }
-
-    layout_manager.set_row_spacing(12);
-    layout_manager.set_column_spacing(30);
-    layout_manager.attach(create_label(_('Shortcuts')), 0, 0, 2, 1);
-
-    [
-        [_('Navigate Windows'), _('Super + Arrow Keys')],
-        [_('Toggle Tiling'), _('Super + Y')],
-    ].forEach((section, idx) => {
-        let key = create_label(section[0]);
-        key.get_clutter_text().set_margin_left(12);
-
-        let val = create_shortcut_label(section[1]);
-
-        layout_manager.attach(key, 0, idx + 1, 1, 1);
-        layout_manager.attach(val, 1, idx + 1, 1, 1);
-    });
-
-    return item;
 }
 
 function clamp(input: number, min = 0, max = 128): number {
