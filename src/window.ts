@@ -41,9 +41,10 @@ enum RESTACK_SPEED {
 }
 
 /** Fixed width of the floating active hint pill, in pixels.
- *  Matches the stack indicator active segment so `---` (single) and
- *  `--- --- ---` (stacked) share the same visual language. */
-const ACTIVE_HINT_BAR_WIDTH = 28;
+ *  Double the inactive width so the active pill is distinct. Matches the
+ *  stack indicator active segment so `---` (single) and `--- --- ---`
+ *  (stacked) share the same visual language. */
+const ACTIVE_HINT_BAR_WIDTH = 56;
 
 /** Fixed height (thickness) of the floating active hint pill, in pixels.
  *  Matches the stack indicator thickness for a uniform pill style. */

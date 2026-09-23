@@ -20,9 +20,9 @@ const INACTIVE_DIM_COLOR = 'rgba(255, 255, 255, 0.5)';
 
 export var TAB_HEIGHT: number = 12;
 
-/** Width of a stack pill segment, in pixels. Active and inactive share
- *  the same width so `---` and `--- --- ---` have a uniform pill style. */
-const SEGMENT_ACTIVE_WIDTH = 28;
+/** Width of the active stack pill segment, in pixels. Double the
+ *  inactive width so the active pill is distinct. */
+const SEGMENT_ACTIVE_WIDTH = 56;
 
 /** Width of an inactive stack segment, in pixels. */
 const SEGMENT_INACTIVE_WIDTH = 28;
