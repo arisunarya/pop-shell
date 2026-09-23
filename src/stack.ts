@@ -10,19 +10,29 @@ import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 
-const INACTIVE_TAB_STYLE = '#9B8E8A';
 const URGENT_TAB_COLOR = '#D00';
+
+/** Solid white for the last-active tab of an unfocused stack. */
+const UNFOCUSED_ACTIVE_COLOR = 'rgba(255, 255, 255, 1)';
+
+/** White at 50% opacity for inactive tabs (focused or not). */
+const INACTIVE_DIM_COLOR = 'rgba(255, 255, 255, 0.5)';
 
 export var TAB_HEIGHT: number = 12;
 
-/** Width of the active stack segment, in pixels. */
+/** Width of a stack pill segment, in pixels. Active and inactive share
+ *  the same width so `---` and `--- --- ---` have a uniform pill style. */
 const SEGMENT_ACTIVE_WIDTH = 28;
 
 /** Width of an inactive stack segment, in pixels. */
-const SEGMENT_INACTIVE_WIDTH = 12;
+const SEGMENT_INACTIVE_WIDTH = 28;
 
-/** Thickness of the stack segment line, in pixels. */
-const SEGMENT_LINE = 2;
+/** Thickness of the stack pill, in pixels. Matches the active hint bar
+ *  so both indicators share the same visual language. */
+const SEGMENT_LINE = 4;
+
+/** Horizontal margin gap between pill bars, in pixels. */
+const SEGMENT_GAP = 6;
 
 /** Gap between the window top edge and the floating stack indicator, in pixels. */
 const STACK_FLOAT_OFFSET = 3;
@@ -44,6 +54,15 @@ function stack_widgets_new(): StackWidgets {
         style_class: 'pop-shell-stack',
         x_expand: true,
     });
+
+    // Transparent container floating in the gap; spacing gives the
+    // margin gap between pill bars.
+    tabs.set_style(
+        `background: transparent; border-width: 0; padding: 0; margin: 0; spacing: ${SEGMENT_GAP}px;`,
+    );
+    try {
+        (tabs as any).spacing = SEGMENT_GAP;
+    } catch (_e) {}
 
     return { tabs };
 }
@@ -201,7 +220,7 @@ export class Stack {
 
                 let button = this.buttons.get(component.button);
                 if (button) {
-                    this.paint_tab(button, component.active ? 'active' : 'inactive');
+                    this.paint_tab(button, component.active ? 'active' : 'inactive', this.is_focused());
                 }
             });
 
@@ -211,23 +230,54 @@ export class Stack {
         this.reset_visibility(permitted);
     }
 
-    /** Paints a tab segment as a thin pill line using the theme colors. */
-    private paint_tab(button: TabButton, state: 'active' | 'inactive' | 'urgent') {
-        let color = INACTIVE_TAB_STYLE;
+    /** Whether one of this stack's windows currently holds global focus. */
+    is_focused(): boolean {
+        const focused = this.ext.focus_window();
+        if (!focused) return false;
+        for (const tab of this.tabs) {
+            if (Ecs.entity_eq(tab.entity, focused.entity)) return true;
+        }
+        return false;
+    }
+
+    /** Repaints every tab from current focus state.
+     *  Call after global focus changes so unfocused stacks turn white
+     *  and the focused stack shows the accent pill. */
+    refresh_tab_colors() {
+        const focused = this.is_focused();
+        for (const tab of this.tabs) {
+            const button = this.buttons.get(tab.button);
+            if (!button) continue;
+            const is_active = Ecs.entity_eq(tab.entity, this.active);
+            this.paint_tab(button, is_active ? 'active' : 'inactive', focused);
+        }
+    }
+
+    /** Paints a tab segment as a floating pill.
+     *  Focused stack: active = accent, inactive = white 50%.
+     *  Unfocused stack: last-active = white solid, rest = white 50%. */
+    private paint_tab(button: TabButton, state: 'active' | 'inactive' | 'urgent', focused: boolean = false) {
+        let color = INACTIVE_DIM_COLOR;
         let width = SEGMENT_INACTIVE_WIDTH * this.ext.dpi;
         if (state === 'active') {
-            color = this.ext.settings.hint_color_rgba();
             width = SEGMENT_ACTIVE_WIDTH * this.ext.dpi;
+            color = focused ? this.ext.settings.hint_color_rgba() : UNFOCUSED_ACTIVE_COLOR;
         } else if (state === 'urgent') {
             color = URGENT_TAB_COLOR;
+            width = SEGMENT_ACTIVE_WIDTH * this.ext.dpi;
         }
 
         button.width = width;
+        // Gap between pills is provided by the tabs container spacing
+        // (see stack_widgets_new); keep button margins at zero so the
+        // measured total_width (widths + GAP*(n-1)) stays exact.
         button.set_style('background: transparent; border-width: 0; padding: 0; margin: 0;');
 
         button.bar.width = width;
-        button.bar.height = SEGMENT_LINE;
-        button.bar.set_style(`background-color: ${color}; border-radius: 2px;`);
+        button.bar.height = SEGMENT_LINE * this.ext.dpi;
+        button.bar.set_style(
+            `background-color: ${color}; border-radius: ${SEGMENT_LINE * this.ext.dpi}px;`,
+        );
     }
 
     /** Connects `on_window_changed` callbacks to the newly-active window */
@@ -295,7 +345,11 @@ export class Stack {
     private change_tab_color(tab: Tab) {
         let button = this.buttons.get(tab.button);
         if (button) {
-            this.paint_tab(button, Ecs.entity_eq(tab.entity, this.active) ? 'active' : 'inactive');
+            this.paint_tab(
+                button,
+                Ecs.entity_eq(tab.entity, this.active) ? 'active' : 'inactive',
+                this.is_focused(),
+            );
         }
     }
 
@@ -576,21 +630,22 @@ export class Stack {
 
         this.tabs_height = TAB_HEIGHT * this.ext.dpi;
 
-        // Size each segment (active is wider, like the workspace indicator)
-        // and center the whole strip; it floats in the gap, taking no layout space.
+        // Size each pill segment and center the whole strip with gaps;
+        // it floats in the gap, taking no layout space.
         let total_width = 0;
         this.tabs.forEach((tab, idx) => {
             const width =
                 idx === this.active_id
                     ? SEGMENT_ACTIVE_WIDTH * this.ext.dpi
                     : SEGMENT_INACTIVE_WIDTH * this.ext.dpi;
-            total_width += width;
+            total_width += width + SEGMENT_GAP * this.ext.dpi;
             const button = this.buttons.get(tab.button);
             if (button) {
                 button.width = width;
                 button.height = this.tabs_height;
             }
         });
+        if (this.tabs.length > 0) total_width -= SEGMENT_GAP * this.ext.dpi;
 
         this.stack_rect = {
             x: rect.x + Math.max(0, (rect.width - total_width) / 2),
@@ -603,6 +658,15 @@ export class Stack {
         this.widgets.tabs.y = this.stack_rect.y;
         this.widgets.tabs.height = this.tabs_height;
         this.widgets.tabs.width = this.stack_rect.width;
+
+        // Keep the visual gap dpi-aware so measured width stays exact.
+        const gap = SEGMENT_GAP * this.ext.dpi;
+        try {
+            (this.widgets.tabs as any).spacing = gap;
+        } catch (_e) {}
+        this.widgets.tabs.set_style(
+            `background: transparent; border-width: 0; padding: 0; margin: 0; spacing: ${gap}px;`,
+        );
     }
 
     private watch_signals(comp: number, button: number, window: ShellWindow) {
@@ -646,7 +710,7 @@ export class Stack {
                 this.window_exec(comp, entity, (window) => {
                     if (!window.meta.has_focus()) {
                         const urgent_button = this.buttons.get(button);
-                        if (urgent_button) this.paint_tab(urgent_button, 'urgent');
+                        if (urgent_button) this.paint_tab(urgent_button, 'urgent', false);
                     }
                 });
             }),

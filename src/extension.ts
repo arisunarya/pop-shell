@@ -955,6 +955,17 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.hide_all_borders();
         const focus = this.focus_window();
         if (focus) focus.show_border();
+        this.refresh_stack_indicators();
+    }
+
+    /** Repaints all stack pill strips for the current focus state:
+     *  focused stack = accent active + white 50% inactive,
+     *  unfocused stacks = white active + white 50% inactive. */
+    refresh_stack_indicators() {
+        if (!this.auto_tiler) return;
+        for (const stack of this.auto_tiler.forest.stacks.values()) {
+            stack.refresh_tab_colors();
+        }
     }
 
     hide_all_borders() {

@@ -46,11 +46,22 @@ enum RESTACK_SPEED {
     NORMAL = 200,
 }
 
-/** Fixed width of the minimal top-edge active hint bar, in pixels. */
-const ACTIVE_HINT_BAR_WIDTH = 100;
+/** Fixed width of the floating active hint pill, in pixels.
+ *  Matches the stack indicator active segment so `---` (single) and
+ *  `--- --- ---` (stacked) share the same visual language. */
+const ACTIVE_HINT_BAR_WIDTH = 28;
 
-/** Fixed height of the minimal top-edge active hint bar, in pixels. */
-export const ACTIVE_HINT_BAR_HEIGHT = 1;
+/** Fixed height (thickness) of the floating active hint pill, in pixels.
+ *  Matches the stack indicator thickness for a uniform pill style. */
+export const ACTIVE_HINT_BAR_HEIGHT = 4;
+
+/** Gap between the window top edge and the floating active hint, in pixels.
+ *  Matches the stack indicator float offset so both float between gaps. */
+const ACTIVE_HINT_FLOAT_OFFSET = 3;
+
+/** Container height used to vertically align the single pill with the
+ *  stack pill strip. Keep in sync with TAB_HEIGHT in stack.ts. */
+const ACTIVE_HINT_TAB_HEIGHT = 12;
 
 interface X11Info {
     normal_hints: once_cell.OnceCell<lib.SizeHint | null>;
@@ -88,8 +99,6 @@ export class ShellWindow {
         wm_role_: new OnceCell(),
         xid_: new OnceCell(),
     };
-
-    private border_size = 0;
 
     constructor(entity: Entity, window: Meta.Window, window_app: any, ext: Ext) {
         this.window_app = window_app;
@@ -394,8 +403,8 @@ export class ShellWindow {
     }
 
     private on_style_changed() {
-        if (!this.border) return;
-        this.border_size = this.border.get_theme_node().get_border_width(St.Side.TOP);
+        // Active hint is a floating pill with inline style; no theme
+        // border width tracking needed. Kept for the style-changed signal.
     }
 
     rect(): Rectangle {
@@ -449,6 +458,13 @@ export class ShellWindow {
     show_border() {
         if (!this.border) return;
 
+        // Stacked windows are indicated by the stack pill strip
+        // (`--- --- ---`) instead of a duplicate single border.
+        if (this.stack !== null) {
+            this.hide_border();
+            return;
+        }
+
         this.restack();
         this.update_border_style();
         if (this.ext.settings.active_hint()) {
@@ -458,6 +474,7 @@ export class ShellWindow {
                 return (
                     this.actor_exists() &&
                     this.ext.focus_window() == this &&
+                    this.stack === null &&
                     !this.meta.is_fullscreen() &&
                     (!this.is_single_max_screen() || this.is_snap_edge()) &&
                     !this.meta.minimized
@@ -597,40 +614,38 @@ export class ShellWindow {
     }
 
     update_border_layout() {
+        // Belt-and-suspenders: a stacked window must never show the single
+        // pill — the stack strip (`--- --- ---`) is its indicator. This
+        // covers any path where the window became stacked while its border
+        // was visible (e.g. stacking without a focus change).
+        if (this.stack !== null) {
+            this.hide_border();
+            return;
+        }
+
         let { x, y, width } = this.meta.get_frame_rect();
 
         const border = this.border;
-        let borderSize = this.border_size;
 
         if (border) {
             if (!(this.is_max_screen() || this.is_snap_edge())) {
                 border.remove_style_class_name('pop-shell-border-maximize');
             } else {
-                borderSize = 0;
                 border.add_style_class_name('pop-shell-border-maximize');
             }
 
-            // Minimal hint: a short bar centered on the top edge,
-            // instead of a rectangle around the window.
-            const thickness = ACTIVE_HINT_BAR_HEIGHT;
-            const barWidth = Math.min(ACTIVE_HINT_BAR_WIDTH, width);
+            // Floating pill centered on the top edge, same language as the
+            // stack indicator (`---` for single, `--- --- ---` for stacked).
+            // It floats in the gap, taking no layout space. The pill top is
+            // aligned with the stack bar tops so single and stacked hints
+            // sit inline at the same height.
+            const dpi = this.ext.dpi;
+            const thickness = ACTIVE_HINT_BAR_HEIGHT * dpi;
+            const barWidth = Math.min(ACTIVE_HINT_BAR_WIDTH * dpi, width);
 
-            let yOffset = thickness;
-
-            const stack_number = this.stack;
-            if (stack_number !== null) {
-                const stack = this.ext.auto_tiler?.forest.stacks.get(stack_number);
-                if (stack) {
-                    let stack_tab_height = stack.tabs_height;
-
-                    if (borderSize === 0 || this.grab) {
-                        // not in max screen state
-                        stack_tab_height = 0;
-                    }
-
-                    yOffset += stack_tab_height;
-                }
-            }
+            const yOffset =
+                ACTIVE_HINT_FLOAT_OFFSET * dpi +
+                (ACTIVE_HINT_TAB_HEIGHT * dpi + thickness) / 2;
 
             const workspace = this.meta.get_workspace();
 
@@ -644,9 +659,10 @@ export class ShellWindow {
     update_border_style() {
         const { settings } = this.ext;
         const color_value = settings.hint_color_rgba();
+        const thickness = ACTIVE_HINT_BAR_HEIGHT * this.ext.dpi;
         if (this.border) {
             this.border.set_style(
-                `background-color: ${color_value}; border-width: 0px; border-radius: 2px;`,
+                `background-color: ${color_value}; border-width: 0px; border-radius: ${thickness}px;`,
             );
         }
     }
