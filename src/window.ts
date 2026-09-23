@@ -649,10 +649,9 @@ export class ShellWindow {
     update_border_style() {
         const { settings } = this.ext;
         const color_value = settings.hint_color_rgba();
-        const radius_value = settings.active_hint_border_radius();
         if (this.border) {
             this.border.set_style(
-                `background-color: ${color_value}; border-width: 0px; border-radius: ${radius_value}px;`,
+                `background-color: ${color_value}; border-width: 0px; border-radius: 2px;`,
             );
         }
     }

@@ -186,7 +186,7 @@ export class Stack {
 
         let id = 0;
 
-        for (const [idx, component] of this.tabs.entries()) {
+        for (const component of this.tabs.values()) {
             this.window_exec(id, component.entity, (window) => {
                 const actor = window.meta.get_compositor_private();
 
@@ -201,7 +201,7 @@ export class Stack {
 
                 let button = this.buttons.get(component.button);
                 if (button) {
-                    this.paint_tab(button, component.active ? 'active' : 'inactive', idx);
+                    this.paint_tab(button, component.active ? 'active' : 'inactive');
                 }
             });
 
@@ -212,7 +212,7 @@ export class Stack {
     }
 
     /** Paints a tab segment as a thin pill line using the theme colors. */
-    private paint_tab(button: TabButton, state: 'active' | 'inactive' | 'urgent', idx: number) {
+    private paint_tab(button: TabButton, state: 'active' | 'inactive' | 'urgent') {
         let color = INACTIVE_TAB_STYLE;
         let width = SEGMENT_INACTIVE_WIDTH * this.ext.dpi;
         if (state === 'active') {
@@ -225,27 +225,9 @@ export class Stack {
         button.width = width;
         button.set_style('background: transparent; border-width: 0; padding: 0; margin: 0;');
 
-        const tab_border_radius = this.get_tab_border_radius(idx);
         button.bar.width = width;
         button.bar.height = SEGMENT_LINE;
-        button.bar.set_style(`background-color: ${color}; border-radius: ${tab_border_radius};`);
-    }
-
-    // returns the tab button border radius based on it's order.
-    // Only curving the corners on the edges.
-    private get_tab_border_radius(idx: Number): string {
-        let result = `0px 0px 0px 0px`;
-
-        // the minus 4px is to accomodate the inner radius being tighter
-        let radius = Math.max(0, this.ext.settings.active_hint_border_radius() - 4);
-        // only allow a radius up to half the tab_height
-        radius = Math.min(radius, Math.trunc(this.tabs_height / 2));
-        // set each corner's radius based on it's order
-        if (this.tabs.length === 1) result = `${radius}px`;
-        else if (idx === 0) result = `${radius}px 0px 0px ${radius}px`;
-        else if (idx === this.tabs.length - 1) result = `0px ${radius}px ${radius}px 0px`;
-
-        return result;
+        button.bar.set_style(`background-color: ${color}; border-radius: 2px;`);
     }
 
     /** Connects `on_window_changed` callbacks to the newly-active window */
@@ -313,8 +295,7 @@ export class Stack {
     private change_tab_color(tab: Tab) {
         let button = this.buttons.get(tab.button);
         if (button) {
-            const idx = this.tabs.indexOf(tab);
-            this.paint_tab(button, Ecs.entity_eq(tab.entity, this.active) ? 'active' : 'inactive', idx);
+            this.paint_tab(button, Ecs.entity_eq(tab.entity, this.active) ? 'active' : 'inactive');
         }
     }
 
@@ -665,7 +646,7 @@ export class Stack {
                 this.window_exec(comp, entity, (window) => {
                     if (!window.meta.has_focus()) {
                         const urgent_button = this.buttons.get(button);
-                        if (urgent_button) this.paint_tab(urgent_button, 'urgent', comp);
+                        if (urgent_button) this.paint_tab(urgent_button, 'urgent');
                     }
                 });
             }),
