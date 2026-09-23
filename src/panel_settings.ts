@@ -1,5 +1,3 @@
-import * as Utils from './utils.js';
-
 import type { Ext } from './extension.js';
 
 import Clutter from 'gi://Clutter';
@@ -23,7 +21,6 @@ export class Indicator {
     appearances: any;
 
     toggle_tiled: any;
-    toggle_titles: null | any;
 
     entry_gaps: any;
 
@@ -67,11 +64,6 @@ export class Indicator {
         bm.addMenuItem(menu_separator(''));
         bm.addMenuItem(shortcuts(bm));
         bm.addMenuItem(menu_separator(''));
-
-        if (!Utils.is_wayland()) {
-            this.toggle_titles = show_title(ext);
-            bm.addMenuItem(this.toggle_titles);
-        }
 
         // CSS Selector
         bm.addMenuItem(color_selector(ext, bm));
@@ -229,14 +221,6 @@ function parse_number(text: string): number {
     }
 
     return number;
-}
-
-function show_title(ext: Ext): any {
-    const t = toggle(_('Show Window Titles'), ext.settings.show_title(), (toggle: any) => {
-        ext.settings.set_show_title(toggle.state);
-    });
-
-    return t;
 }
 
 function toggle(desc: string, active: boolean, connect: (toggle: any, state: boolean) => void): any {

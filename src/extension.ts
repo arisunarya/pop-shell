@@ -1665,24 +1665,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.unset_grab_op();
     }
 
-    on_show_window_titles() {
-        const show_title = this.settings.show_title();
-
-        if (indicator) {
-            indicator.toggle_titles.setToggleState(show_title);
-        }
-
-        for (const window of this.windows.values()) {
-            if (window.is_client_decorated()) continue;
-
-            if (show_title) {
-                window.decoration_show(this);
-            } else {
-                window.decoration_hide(this);
-            }
-        }
-    }
-
     on_window_create(window: Meta.Window, actor: Clutter.Actor) {
         let win = this.get_window(window);
         if (win) {
@@ -1895,9 +1877,6 @@ export class Ext extends Ecs.System<ExtEvent> {
                     break;
                 case 'gap-outer':
                     this.on_gap_outer();
-                    break;
-                case 'show-title':
-                    this.on_show_window_titles();
                     break;
                 case 'show-skip-taskbar':
                     if (this.settings.show_skiptaskbar()) {

@@ -28,12 +28,6 @@ let SCHEDULED_RESTACK: number | null = null;
 /** Contains SourceID of an active hint operation. */
 let ACTIVE_HINT_SHOW_ID: number | null = null;
 
-const WM_TITLE_BLACKLIST: Array<string> = [
-    'Firefox',
-    'Nightly', // Firefox Nightly
-    'Tor Browser',
-];
-
 enum RESTACK_STATE {
     RAISED,
     WORKSPACE_CHANGED,
@@ -92,8 +86,6 @@ export class ShellWindow {
 
     window_app: any;
 
-    private was_hidden: boolean = false;
-
     private extra: X11Info = {
         normal_hints: new OnceCell(),
         wm_role_: new OnceCell(),
@@ -112,16 +104,6 @@ export class ShellWindow {
         // Float fullscreen windows by default, such as Kodi.
         if (this.meta.is_fullscreen()) {
             ext.add_tag(entity, Tags.Floating);
-        }
-
-        if (this.may_decorate()) {
-            if (!this.is_client_decorated()) {
-                if (ext.settings.show_title()) {
-                    this.decoration_show(ext);
-                } else {
-                    this.decoration_hide(ext);
-                }
-            }
         }
 
         this.bind_window_events();
@@ -236,27 +218,6 @@ export class ShellWindow {
         return out;
     }
 
-    private decoration(_ext: Ext, callback: (xid: string) => void): void {
-        if (this.may_decorate()) {
-            const xid = this.xid();
-            if (xid) callback(xid);
-        }
-    }
-
-    decoration_hide(ext: Ext): void {
-        if (this.ignore_decoration()) return;
-
-        this.was_hidden = true;
-
-        this.decoration(ext, (xid) => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.HIDE_FLAGS));
-    }
-
-    decoration_show(ext: Ext): void {
-        if (!this.was_hidden) return;
-
-        this.decoration(ext, (xid) => xprop.set_hint(xid, xprop.MOTIF_HINTS, xprop.SHOW_FLAGS));
-    }
-
     icon(_ext: Ext, size: number): any {
         let icon = this.window_app.create_icon_texture(size);
 
@@ -269,22 +230,6 @@ export class ShellWindow {
         }
 
         return icon;
-    }
-
-    ignore_decoration(): boolean {
-        const name = this.meta.get_wm_class();
-        if (name === null) return true;
-        return WM_TITLE_BLACKLIST.findIndex((n) => name.startsWith(n)) !== -1;
-    }
-
-    is_client_decorated(): boolean {
-        // look I guess I'll hack something together in here if at all possible
-        // Because Meta.Window.is_client_decorated() was removed in Meta 15, using it breaks the extension in gnome 47 or higher
-        //return this.meta.window_type == Meta.WindowType.META_WINDOW_OVERRIDE_OTHER;
-        const xid = this.xid();
-        const extents = xid ? xprop.get_frame_extents(xid) : false;
-        if (!extents) return false;
-        return true;
     }
 
     is_maximized(): boolean {
@@ -357,11 +302,6 @@ export class ShellWindow {
 
     is_transient(): boolean {
         return this.meta.get_transient_for() !== null;
-    }
-
-    may_decorate(): boolean {
-        const xid = this.xid();
-        return xid ? xprop.may_decorate(xid) : false;
     }
 
     move(ext: Ext, rect: Rectangular, on_complete?: () => void) {
