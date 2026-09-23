@@ -49,7 +49,6 @@ function settings_new_schema(schema: string): Settings {
     return new Gio.Settings({ settings_schema: schemaObj });
 }
 
-const ACTIVE_HINT = 'active-hint';
 const STACKING_WITH_MOUSE = 'stacking-with-mouse';
 const COLUMN_SIZE = 'column-size';
 const EDGE_TILING = 'edge-tiling';
@@ -73,10 +72,6 @@ export class ExtensionSettings {
     shell: Settings | null = settings_new_id('org.gnome.shell.extensions.user-theme');
 
     // Getters
-
-    active_hint(): boolean {
-        return this.ext.get_boolean(ACTIVE_HINT);
-    }
 
     stacking_with_mouse(): boolean {
         return this.ext.get_boolean(STACKING_WITH_MOUSE);
@@ -159,10 +154,6 @@ export class ExtensionSettings {
     }
 
     // Setters
-
-    set_active_hint(set: boolean) {
-        this.ext.set_boolean(ACTIVE_HINT, set);
-    }
 
     set_stacking_with_mouse(set: boolean) {
         this.ext.set_boolean(STACKING_WITH_MOUSE, set);

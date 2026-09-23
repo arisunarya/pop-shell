@@ -24,7 +24,6 @@ export class Indicator {
 
     toggle_tiled: any;
     toggle_titles: null | any;
-    toggle_active: any;
 
     entry_gaps: any;
 
@@ -57,10 +56,6 @@ export class Indicator {
 
         this.toggle_tiled = tiled(ext);
 
-        this.toggle_active = toggle(_('Show Active Hint'), ext.settings.active_hint(), (toggle) => {
-            ext.settings.set_active_hint(toggle.state);
-        });
-
         this.entry_gaps = number_entry(_('Gaps'), ext.settings.gap_inner(), (value) => {
             ext.settings.set_gap_inner(value);
             ext.settings.set_gap_outer(value);
@@ -77,8 +72,6 @@ export class Indicator {
             this.toggle_titles = show_title(ext);
             bm.addMenuItem(this.toggle_titles);
         }
-
-        bm.addMenuItem(this.toggle_active);
 
         // CSS Selector
         bm.addMenuItem(color_selector(ext, bm));
