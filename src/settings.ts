@@ -61,7 +61,6 @@ const SNAP_TO_GRID = 'snap-to-grid';
 const TILE_BY_DEFAULT = 'tile-by-default';
 const HINT_COLOR_RGBA = 'hint-color-rgba';
 const DEFAULT_RGBA_COLOR = 'rgba(251, 184, 108, 1)'; //pop-orange
-const LOG_LEVEL = 'log-level';
 const SHOW_SKIPTASKBAR = 'show-skip-taskbar';
 const MOUSE_CURSOR_FOLLOWS_ACTIVE_WINDOW = 'mouse-cursor-follows-active-window';
 const MOUSE_CURSOR_FOCUS_LOCATION = 'mouse-cursor-focus-location';
@@ -143,10 +142,6 @@ export class ExtensionSettings {
         return this.mutter ? this.mutter.get_boolean('workspaces-only-on-primary') : false;
     }
 
-    log_level(): number {
-        return this.ext.get_uint(LOG_LEVEL);
-    }
-
     show_skiptaskbar(): boolean {
         return this.ext.get_boolean(SHOW_SKIPTASKBAR);
     }
@@ -213,10 +208,6 @@ export class ExtensionSettings {
 
     set_tile_by_default(set: boolean) {
         this.ext.set_boolean(TILE_BY_DEFAULT, set);
-    }
-
-    set_log_level(set: number) {
-        this.ext.set_uint(LOG_LEVEL, set);
     }
 
     set_show_skiptaskbar(set: boolean) {

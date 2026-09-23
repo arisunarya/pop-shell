@@ -17,7 +17,6 @@ interface AppWidgets {
     snap_to_grid: any;
     window_titles: any;
     mouse_cursor_focus_position: any;
-    log_level: any;
     max_window_width: any;
 }
 
@@ -68,12 +67,6 @@ function settings_dialog_new(): Gtk.Container {
             ext.set_gap_inner(parsed);
             Settings.sync();
         }
-    });
-
-    app.log_level.set_active(ext.log_level());
-    app.log_level.connect('changed', () => {
-        let active_id = app.log_level.get_active_id();
-        ext.set_log_level(active_id);
     });
 
     app.show_skip_taskbar.set_active(ext.show_skiptaskbar());
@@ -164,7 +157,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         show_skip_taskbar: new Gtk.Switch({ halign: Gtk.Align.END }),
         mouse_cursor_follows_active_window: new Gtk.Switch({ halign: Gtk.Align.END }),
         mouse_cursor_focus_position: build_combo(grid, 7, focus.FocusPosition, 'Mouse Cursor Focus Position'),
-        log_level: build_combo(grid, 8, log.LOG_LEVELS, 'Log Level'),
         max_window_width: number_entry(),
     };
 
