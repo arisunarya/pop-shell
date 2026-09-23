@@ -14,7 +14,6 @@ interface AppWidgets {
     mouse_cursor_follows_active_window: any;
     outer_gap: any;
     show_skip_taskbar: any;
-    smart_gaps: any;
     snap_to_grid: any;
     window_titles: any;
     mouse_cursor_focus_position: any;
@@ -50,12 +49,6 @@ function settings_dialog_new(): Gtk.Container {
     app.snap_to_grid.set_active(ext.snap_to_grid());
     app.snap_to_grid.connect('state-set', (_widget: any, state: boolean) => {
         ext.set_snap_to_grid(state);
-        Settings.sync();
-    });
-
-    app.smart_gaps.set_active(ext.smart_gaps());
-    app.smart_gaps.connect('state-set', (_widget: any, state: boolean) => {
-        ext.set_smart_gaps(state);
         Settings.sync();
     });
 
@@ -140,11 +133,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         xalign: 0.0,
     });
 
-    const smart_label = new Gtk.Label({
-        label: 'Smart Gaps',
-        xalign: 0.0,
-    });
-
     const show_skip_taskbar_label = new Gtk.Label({
         label: 'Show Minimize to Tray Windows',
         xalign: 0.0,
@@ -171,7 +159,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         inner_gap,
         outer_gap,
         stacking_with_mouse: new Gtk.Switch({ halign: Gtk.Align.END }),
-        smart_gaps: new Gtk.Switch({ halign: Gtk.Align.END }),
         snap_to_grid: new Gtk.Switch({ halign: Gtk.Align.END }),
         window_titles: new Gtk.Switch({ halign: Gtk.Align.END }),
         show_skip_taskbar: new Gtk.Switch({ halign: Gtk.Align.END }),
@@ -186,9 +173,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
 
     grid.attach(snap_label, 0, 1, 1, 1);
     grid.attach(settings.snap_to_grid, 1, 1, 1, 1);
-
-    grid.attach(smart_label, 0, 2, 1, 1);
-    grid.attach(settings.smart_gaps, 1, 2, 1, 1);
 
     grid.attach(stacking_with_mouse, 0, 4, 1, 1);
     grid.attach(settings.stacking_with_mouse, 1, 4, 1, 1);

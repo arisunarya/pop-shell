@@ -1672,18 +1672,6 @@ export class Ext extends Ecs.System<ExtEvent> {
         }
     }
 
-    on_smart_gap() {
-        if (this.auto_tiler) {
-            const smart_gaps = this.settings.smart_gaps();
-            for (const [entity, [mon]] of this.auto_tiler.forest.toplevel.values()) {
-                const node = this.auto_tiler.forest.forks.get(entity);
-                if (node?.right === null) {
-                    this.auto_tiler.update_toplevel(this, node, mon, smart_gaps);
-                }
-            }
-        }
-    }
-
     on_window_create(window: Meta.Window, actor: Clutter.Actor) {
         let win = this.get_window(window);
         if (win) {
@@ -1903,10 +1891,6 @@ export class Ext extends Ecs.System<ExtEvent> {
                     break;
                 case 'show-title':
                     this.on_show_window_titles();
-                    break;
-                case 'smart-gaps':
-                    this.on_smart_gap();
-                    this.show_border_on_focused();
                     break;
                 case 'show-skip-taskbar':
                     if (this.settings.show_skiptaskbar()) {
@@ -2348,9 +2332,8 @@ export class Ext extends Ecs.System<ExtEvent> {
                 if (display) {
                     const area = new Rect.Rectangle([display.x, display.y, display.width, display.height]);
 
-                    f.smart_gapped = false;
                     f.set_area(area.clone());
-                    this.auto_tiler.update_toplevel(this, f, f.monitor, this.settings.smart_gaps());
+                    this.auto_tiler.update_toplevel(this, f, f.monitor);
                 }
             }
         };

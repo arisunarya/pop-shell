@@ -73,9 +73,6 @@ export class ShellWindow {
     // Awaiting reassignment after a display update
     reassignment: boolean = false;
 
-    // True if this window is currently smart-gapped
-    smart_gapped: boolean = false;
-
     border: null | St.Bin = new St.Bin({
         style_class: 'pop-shell-active-hint pop-shell-border-normal',
     });
@@ -286,12 +283,10 @@ export class ShellWindow {
     }
 
     /**
-     * Window is maximized, 0 gapped or smart gapped
+     * Window is maximized or 0 gapped
      */
     is_max_screen(): boolean {
-        // log.debug(`title: ${this.meta.get_title()}`);
-        // log.debug(`max: ${this.is_maximized()}, 0-gap: ${this.ext.settings.gap_inner() === 0}, smart: ${this.smart_gapped}`);
-        return this.is_maximized() || this.ext.settings.gap_inner() === 0 || this.smart_gapped;
+        return this.is_maximized() || this.ext.settings.gap_inner() === 0;
     }
 
     is_single_max_screen(): boolean {
@@ -299,7 +294,7 @@ export class ShellWindow {
 
         if (display) {
             let monitor_count = display.get_n_monitors();
-            return (this.is_maximized() || this.smart_gapped) && monitor_count == 1;
+            return this.is_maximized() && monitor_count == 1;
         }
 
         return false;

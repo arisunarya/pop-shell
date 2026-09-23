@@ -94,24 +94,13 @@ export class AutoTiler {
         this.tile(ext, b_fork, b_fork.area);
     }
 
-    update_toplevel(ext: Ext, fork: Fork, monitor: number, smart_gaps: boolean) {
+    update_toplevel(ext: Ext, fork: Fork, monitor: number) {
         let rect = ext.monitor_work_area(monitor);
 
-        fork.smart_gapped = smart_gaps && fork.right === null;
-
-        if (!fork.smart_gapped) {
-            rect.x += ext.gap_outer;
-            rect.y += ext.gap_outer;
-            rect.width -= ext.gap_outer * 2;
-            rect.height -= ext.gap_outer * 2;
-        }
-
-        if (fork.left.inner.kind === 2) {
-            const win = ext.windows.get(fork.left.inner.entity);
-            if (win) {
-                win.smart_gapped = fork.smart_gapped;
-            }
-        }
+        rect.x += ext.gap_outer;
+        rect.y += ext.gap_outer;
+        rect.width -= ext.gap_outer * 2;
+        rect.height -= ext.gap_outer * 2;
 
         fork.area = fork.set_area(rect.clone());
         fork.length_left = Math.round(fork.prev_ratio * fork.length());
@@ -119,20 +108,16 @@ export class AutoTiler {
     }
 
     /** Attaches `win` to an optionally-given monitor */
-    attach_to_monitor(ext: Ext, win: ShellWindow, workspace_id: [number, number], smart_gaps: boolean) {
+    attach_to_monitor(ext: Ext, win: ShellWindow, workspace_id: [number, number]) {
         let rect = ext.monitor_work_area(workspace_id[0]);
 
-        if (!smart_gaps) {
-            rect.x += ext.gap_outer;
-            rect.y += ext.gap_outer;
-            rect.width -= ext.gap_outer * 2;
-            rect.height -= ext.gap_outer * 2;
-        }
+        rect.x += ext.gap_outer;
+        rect.y += ext.gap_outer;
+        rect.width -= ext.gap_outer * 2;
+        rect.height -= ext.gap_outer * 2;
 
         const [entity, fork] = this.forest.create_toplevel(win.entity, rect.clone(), workspace_id);
         this.forest.on_attach(entity, win.entity);
-        fork.smart_gapped = smart_gaps;
-        win.smart_gapped = smart_gaps;
 
         this.tile(ext, fork, rect);
     }
@@ -151,18 +136,6 @@ export class AutoTiler {
             const [, fork] = attached;
             const monitor = ext.monitors.get(attachee.entity);
             if (monitor) {
-                if (fork.is_toplevel && fork.smart_gapped && fork.right) {
-                    fork.smart_gapped = false;
-                    let rect = ext.monitor_work_area(fork.monitor);
-
-                    rect.x += ext.gap_outer;
-                    rect.y += ext.gap_outer;
-                    rect.width -= ext.gap_outer * 2;
-                    rect.height -= ext.gap_outer * 2;
-
-                    fork.set_area(rect);
-                }
-
                 this.tile(ext, fork, fork.area.clone());
                 return true;
             } else {
@@ -190,7 +163,7 @@ export class AutoTiler {
             }
         }
 
-        this.attach_to_monitor(ext, win, id, ext.settings.smart_gaps());
+        this.attach_to_monitor(ext, win, id);
     }
 
     /** Automatically tiles a window into the window tree.
@@ -243,12 +216,6 @@ export class AutoTiler {
 
             if (reflow_fork) {
                 const fork = reflow_fork[1];
-                if (fork.is_toplevel && ext.settings.smart_gaps() && fork.right === null) {
-                    let rect = ext.monitor_work_area(fork.monitor);
-                    fork.set_area(rect);
-                    fork.smart_gapped = true;
-                }
-
                 this.tile(ext, fork, fork.area);
             }
 
@@ -354,7 +321,7 @@ export class AutoTiler {
             if (attach_to) {
                 this.attach_to_window(ext, attach_to, win, { auto: 0 });
             } else {
-                this.attach_to_monitor(ext, win, [monitor, workspace], ext.settings.smart_gaps());
+                this.attach_to_monitor(ext, win, [monitor, workspace]);
             }
         };
 
@@ -391,7 +358,7 @@ export class AutoTiler {
 
         if (windowless) {
             this.detach_window(ext, win.entity);
-            this.attach_to_monitor(ext, win, [monitor, workspace], ext.settings.smart_gaps());
+            this.attach_to_monitor(ext, win, [monitor, workspace]);
         } else if (attach_to) {
             this.place_or_stack(ext, win, attach_to, cursor);
         } else {

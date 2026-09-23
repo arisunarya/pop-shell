@@ -36,8 +36,6 @@ export class Fork {
     orientation_changed: boolean = false;
     is_toplevel: boolean = false;
 
-    smart_gapped: boolean = false;
-
     /** Tracks toggle count so that we may swap branches when toggled twice */
     private n_toggled: number = 0;
 
