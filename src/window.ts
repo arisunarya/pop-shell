@@ -50,14 +50,6 @@ const ACTIVE_HINT_BAR_WIDTH = 56;
  *  Matches the stack indicator thickness for a uniform pill style. */
 export const ACTIVE_HINT_BAR_HEIGHT = 4;
 
-/** Gap between the window top edge and the floating active hint, in pixels.
- *  Matches the stack indicator float offset so both float between gaps. */
-const ACTIVE_HINT_FLOAT_OFFSET = 3;
-
-/** Container height used to vertically align the single pill with the
- *  stack pill strip. Keep in sync with TAB_HEIGHT in stack.ts. */
-const ACTIVE_HINT_TAB_HEIGHT = 12;
-
 interface X11Info {
     normal_hints: once_cell.OnceCell<lib.SizeHint | null>;
     wm_role_: once_cell.OnceCell<string | null>;
@@ -574,18 +566,17 @@ export class ShellWindow {
                 border.add_style_class_name('pop-shell-border-maximize');
             }
 
-            // Floating pill centered on the top edge, same language as the
-            // stack indicator (`---` for single, `--- --- ---` for stacked).
-            // It floats in the gap, taking no layout space. The pill top is
-            // aligned with the stack bar tops so single and stacked hints
-            // sit inline at the same height.
+            // Floating pill, same language as the stack indicator (`---`
+            // for single, `--- --- ---` for stacked). It takes no layout
+            // space and sits vertically centered in the gap above the
+            // window, inline with the stack pills.
             const dpi = this.ext.dpi;
             const thickness = ACTIVE_HINT_BAR_HEIGHT * dpi;
             const barWidth = Math.min(ACTIVE_HINT_BAR_WIDTH * dpi, width);
 
-            const yOffset =
-                ACTIVE_HINT_FLOAT_OFFSET * dpi +
-                (ACTIVE_HINT_TAB_HEIGHT * dpi + thickness) / 2;
+            // Centered on the inner gap above the window (the panel
+            // keeps outer == inner, so this holds at the screen edge too).
+            const yOffset = this.ext.gap_inner_half + thickness / 2;
 
             const workspace = this.meta.get_workspace();
 

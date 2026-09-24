@@ -53,7 +53,8 @@ export class Indicator {
 
         this.toggle_tiled = tiled(ext);
 
-        this.entry_gaps = number_entry(_('Gaps'), ext.settings.gap_inner(), (value) => {
+        // Pills live in the gap, so a gap must always exist: floor at 3.
+        this.entry_gaps = number_entry(_('Gaps'), { value: ext.settings.gap_inner(), min: 3, max: 128 }, (value) => {
             ext.settings.set_gap_inner(value);
             ext.settings.set_gap_outer(value);
         });
@@ -203,7 +204,7 @@ function number_entry(
             parsed = 0;
         }
 
-        callback(parsed);
+        callback(clamp(parsed, min ?? 0, max ?? 128));
     });
 
     const item = new PopupMenuItem(label);

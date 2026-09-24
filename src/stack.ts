@@ -34,9 +34,6 @@ const SEGMENT_LINE = 4;
 /** Horizontal margin gap between pill bars, in pixels. */
 const SEGMENT_GAP = 6;
 
-/** Gap between the window top edge and the floating stack indicator, in pixels. */
-const STACK_FLOAT_OFFSET = 3;
-
 interface Tab {
     active: boolean;
     entity: Entity;
@@ -647,9 +644,15 @@ export class Stack {
         });
         if (this.tabs.length > 0) total_width -= SEGMENT_GAP * this.ext.dpi;
 
+        // Center the strip vertically on the inner gap above the window
+        // (the panel keeps outer == inner, so this holds at the screen
+        // edge too). Bars are centered in the container, so they land on
+        // the gap middle as well.
+        const gap_half = this.ext.gap_inner_half;
+
         this.stack_rect = {
             x: rect.x + Math.max(0, (rect.width - total_width) / 2),
-            y: rect.y - this.tabs_height - STACK_FLOAT_OFFSET * this.ext.dpi,
+            y: rect.y - gap_half - this.tabs_height / 2,
             width: Math.min(total_width, rect.width),
             height: this.tabs_height + rect.height,
         };
