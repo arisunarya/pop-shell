@@ -36,19 +36,25 @@ function settings_dialog_new(): Gtk.Container {
 
     let ext = new settings.ExtensionSettings();
 
-    app.outer_gap.set_text(String(ext.gap_outer()));
+    const clamp_gap = (gap: number) => Math.min(Math.max(gap, settings.MIN_GAP), settings.MAX_GAP);
+
+    app.outer_gap.set_text(String(clamp_gap(ext.gap_outer())));
     app.outer_gap.connect('activate', (widget: any) => {
         let parsed = parseInt((widget.get_text() as string).trim());
         if (!isNaN(parsed)) {
+            parsed = clamp_gap(parsed);
+            widget.set_text(String(parsed));
             ext.set_gap_outer(parsed);
             Settings.sync();
         }
     });
 
-    app.inner_gap.set_text(String(ext.gap_inner()));
+    app.inner_gap.set_text(String(clamp_gap(ext.gap_inner())));
     app.inner_gap.connect('activate', (widget: any) => {
         let parsed = parseInt((widget.get_text() as string).trim());
         if (!isNaN(parsed)) {
+            parsed = clamp_gap(parsed);
+            widget.set_text(String(parsed));
             ext.set_gap_inner(parsed);
             Settings.sync();
         }

@@ -62,6 +62,11 @@ const MOUSE_CURSOR_FOLLOWS_ACTIVE_WINDOW = 'mouse-cursor-follows-active-window';
 const MOUSE_CURSOR_FOCUS_LOCATION = 'mouse-cursor-focus-location';
 const MAX_WINDOW_WIDTH = 'max-window-width';
 
+/** Bounds accepted for the window gaps setting: pills live in the gap,
+ *  so a gap must always exist, and pills scale with it. */
+export const MIN_GAP = 3;
+export const MAX_GAP = 10;
+
 export class ExtensionSettings {
     ext: Settings = settings_new_schema('org.gnome.shell.extensions.pop-shell');
     int: Settings | null = settings_new_id('org.gnome.desktop.interface');
@@ -148,12 +153,14 @@ export class ExtensionSettings {
         this.mutter?.set_boolean(EDGE_TILING, enable);
     }
 
+    /** Gaps are clamped to [MIN_GAP, MAX_GAP]: pills live in the gap
+     *  and scale with it. */
     set_gap_inner(gap: number) {
-        this.ext.set_uint(GAP_INNER, gap);
+        this.ext.set_uint(GAP_INNER, Math.min(Math.max(gap, MIN_GAP), MAX_GAP));
     }
 
     set_gap_outer(gap: number) {
-        this.ext.set_uint(GAP_OUTER, gap);
+        this.ext.set_uint(GAP_OUTER, Math.min(Math.max(gap, MIN_GAP), MAX_GAP));
     }
 
     set_hint_color_rgba(rgba: string) {

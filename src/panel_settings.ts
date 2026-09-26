@@ -14,7 +14,7 @@ import { Button } from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import GLib from 'gi://GLib';
 import { spawn } from 'resource:///org/gnome/shell/misc/util.js';
 import { get_current_path } from './paths.js';
-// import * as Settings from './settings.js';
+import { MAX_GAP, MIN_GAP } from './settings.js';
 
 export class Indicator {
     button: any;
@@ -53,11 +53,19 @@ export class Indicator {
 
         this.toggle_tiled = tiled(ext);
 
-        // Pills live in the gap, so a gap must always exist: floor at 3.
-        this.entry_gaps = number_entry(_('Gaps'), { value: ext.settings.gap_inner(), min: 3, max: 128 }, (value) => {
-            ext.settings.set_gap_inner(value);
-            ext.settings.set_gap_outer(value);
-        });
+        // Pills live in the gap and scale with it: clamp to [MIN_GAP, MAX_GAP].
+        this.entry_gaps = number_entry(
+            _('Gaps'),
+            {
+                value: Math.min(Math.max(ext.settings.gap_inner(), MIN_GAP), MAX_GAP),
+                min: MIN_GAP,
+                max: MAX_GAP,
+            },
+            (value) => {
+                ext.settings.set_gap_inner(value);
+                ext.settings.set_gap_outer(value);
+            },
+        );
 
         bm.addMenuItem(this.toggle_tiled);
         bm.addMenuItem(floating_window_exceptions(ext, bm));
