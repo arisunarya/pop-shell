@@ -49,7 +49,6 @@ function settings_new_schema(schema: string): Settings {
     return new Gio.Settings({ settings_schema: schemaObj });
 }
 
-const STACKING_WITH_MOUSE = 'stacking-with-mouse';
 const COLUMN_SIZE = 'column-size';
 const EDGE_TILING = 'edge-tiling';
 const GAP_INNER = 'gap-inner';
@@ -71,10 +70,6 @@ export class ExtensionSettings {
     shell: Settings | null = settings_new_id('org.gnome.shell.extensions.user-theme');
 
     // Getters
-
-    stacking_with_mouse(): boolean {
-        return this.ext.get_boolean(STACKING_WITH_MOUSE);
-    }
 
     column_size(): number {
         return this.ext.get_uint(COLUMN_SIZE);
@@ -149,10 +144,6 @@ export class ExtensionSettings {
     }
 
     // Setters
-
-    set_stacking_with_mouse(set: boolean) {
-        this.ext.set_boolean(STACKING_WITH_MOUSE, set);
-    }
 
     set_column_size(size: number) {
         this.ext.set_uint(COLUMN_SIZE, size);

@@ -20,16 +20,16 @@ const INACTIVE_DIM_COLOR = 'rgba(255, 255, 255, 0.5)';
 
 export var TAB_HEIGHT: number = 12;
 
-/** Width of the active stack pill segment, in pixels. Double the
- *  inactive width so the active pill is distinct. */
+/** Width of the active stack pill segment, in pixels. */
 const SEGMENT_ACTIVE_WIDTH = 56;
 
-/** Width of an inactive stack segment, in pixels. */
-const SEGMENT_INACTIVE_WIDTH = 28;
+/** Width of an inactive stack segment, in pixels. Same as the active
+ *  width so all pills in the strip share one size. */
+const SEGMENT_INACTIVE_WIDTH = 56;
 
 /** Thickness of the stack pill, in pixels. Matches the active hint bar
  *  so both indicators share the same visual language. */
-const SEGMENT_LINE = 4;
+const SEGMENT_LINE = 5;
 
 /** Horizontal margin gap between pill bars, in pixels. */
 const SEGMENT_GAP = 6;

@@ -1490,7 +1490,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                         return true;
                     }
 
-                    const result = monitor_attachment ? null : auto_tiler.cursor_placement(this, area, cursor);
+                    const result = monitor_attachment ? null : auto_tiler.cursor_placement(area, cursor);
 
                     if (!result) {
                         this.overlay.x = area.x;
@@ -1615,6 +1615,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                         if (typeof attachment === 'boolean') {
                             tiler.forest.attach_fork(this, fork, win.entity, attachment);
                             tiler.tile(this, fork, fork.area);
+                            tiler.ensure_stacked(this, win);
                             return;
                         } else {
                             const stack = tiler.forest.stacks.get(attachment);

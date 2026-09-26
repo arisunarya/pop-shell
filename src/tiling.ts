@@ -221,8 +221,20 @@ export class Tiler {
                     if (ext.auto_tiler) {
                         const s = ext.auto_tiler.find_stack(focused.entity);
                         if (s) {
-                            this.move_from_stack(ext, s, focused, direction);
+                            const inner = s[1].inner as NodeStack;
+                            if (inner.entities.length > 1) {
+                                this.move_from_stack(ext, s, focused, direction);
+                            } else {
+                                // Single-tab stack: move directly; detach
+                                // handles stacked windows and the result is
+                                // re-wrapped via ensure_stacked below, so it
+                                // stays in stack mode (permanent).
+                                if (move_to !== null) {
+                                    this.move_auto(ext, focused, move_to, direction === Direction.Left);
+                                }
+                            }
                             this.moving = false;
+                            ext.auto_tiler.ensure_stacked(ext, focused);
                             place_pointer();
                             return;
                         }
@@ -230,6 +242,7 @@ export class Tiler {
 
                     if (move_to !== null) this.move_auto(ext, focused, move_to, direction === Direction.Left);
                     this.moving = false;
+                    if (ext.auto_tiler) ext.auto_tiler.ensure_stacked(ext, focused);
                     place_pointer();
                 }
             });
@@ -303,6 +316,8 @@ export class Tiler {
         modifier.set_orientation(orientation);
         ext.auto_tiler.forest.on_attach(modifier.entity, focused.entity);
         ext.auto_tiler.tile(ext, fork, fork.area);
+        // Force stacked: a tab moved out to a split becomes its own stack.
+        ext.auto_tiler.ensure_stacked(ext, focused);
         this.overlay_watch(ext, focused);
     }
 
@@ -318,7 +333,8 @@ export class Tiler {
         const inner = branch.inner as NodeStack;
 
         if (inner.entities.length === 1) {
-            ext.auto_tiler.toggle_stacking(ext);
+            // Sole tab: nothing to separate; keep it stacked and refresh.
+            ext.auto_tiler.tile(ext, fork, fork.area);
             this.overlay_watch(ext, focused);
             return;
         }
@@ -354,6 +370,8 @@ export class Tiler {
             modifier.set_orientation(orient);
             forest.on_attach(modifier.entity, fentity);
             ext.auto_tiler.tile(ext, fork, fork.area);
+            // Force stacked: a tab moved out to a split becomes its own stack.
+            ext.auto_tiler.ensure_stacked(ext, focused);
             this.overlay_watch(ext, focused);
         };
 

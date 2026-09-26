@@ -107,6 +107,24 @@ export class AutoTiler {
         this.tile(ext, fork, fork.area);
     }
 
+    /** Wraps `win` in its own single-tab stack when it is a plain window.
+     *  Used to force everything to stay stacked. No-op for stacked,
+     *  floating-detached, or in-flight windows. */
+    ensure_stacked(ext: Ext, win: ShellWindow) {
+        if (win.stack !== null) return;
+
+        const fork_entity = this.attached.get(win.entity);
+        if (fork_entity === null) return;
+
+        const fork = this.forest.forks.get(fork_entity);
+        if (!fork) return;
+
+        if (!fork.left.is_window(win.entity) && !fork.right?.is_window(win.entity)) return;
+
+        this.create_stack(ext, win);
+        this.tile(ext, fork, fork.area);
+    }
+
     /** Attaches `win` to an optionally-given monitor */
     attach_to_monitor(ext: Ext, win: ShellWindow, workspace_id: [number, number]) {
         let rect = ext.monitor_work_area(workspace_id[0]);
@@ -120,9 +138,15 @@ export class AutoTiler {
         this.forest.on_attach(entity, win.entity);
 
         this.tile(ext, fork, rect);
+        this.ensure_stacked(ext, win);
     }
 
-    /** Tiles a window into another */
+    /** Tiles a window into another.
+     *
+     * Permanent stack mode: automatic placements always tab together via
+     * `attach_stacked` instead of splitting. Manual placements fall through
+     * to a split, but both sides are re-wrapped so no plain windows remain.
+     */
     attach_to_window(
         ext: Ext,
         attachee: ShellWindow,
@@ -130,6 +154,12 @@ export class AutoTiler {
         move_by: MoveBy,
         stack_from_left: boolean = true,
     ): boolean {
+        if ('auto' in move_by) {
+            if (this.attach_stacked(ext, attachee, attacher)) {
+                return true;
+            }
+        }
+
         let attached = this.forest.attach_window(ext, attachee.entity, attacher.entity, move_by, stack_from_left);
 
         if (attached) {
@@ -137,6 +167,10 @@ export class AutoTiler {
             const monitor = ext.monitors.get(attachee.entity);
             if (monitor) {
                 this.tile(ext, fork, fork.area.clone());
+                // Force stacked: a split leaves plain windows behind, so
+                // wrap both sides in their own single-tab stacks.
+                this.ensure_stacked(ext, attachee);
+                this.ensure_stacked(ext, attacher);
                 return true;
             } else {
                 log.error(`missing monitor association for Window(${attachee.entity})`);
@@ -144,6 +178,21 @@ export class AutoTiler {
         }
 
         return false;
+    }
+
+    /** Attaches `win` onto `onto` as a stacked tab instead of splitting.
+     *  Converts `onto` into a stack first when it is a plain window.
+     *  Returns false when stacking was not possible. */
+    private attach_stacked(ext: Ext, onto: ShellWindow, win: ShellWindow): boolean {
+        if (onto.stack === null) this.create_stack(ext, onto);
+
+        const stack_info = this.find_stack(onto.entity);
+        if (!stack_info) return false;
+
+        const [stack_fork, branch] = stack_info;
+        this.forest.attach_stack(ext, branch.inner as node.NodeStack, stack_fork, win.entity, true);
+        this.tile(ext, stack_fork, stack_fork.area);
+        return true;
     }
 
     /** Tile a window onto a workspace */
@@ -157,6 +206,10 @@ export class AutoTiler {
         if (toplevel) {
             const onto = this.forest.largest_window_on(ext, toplevel);
             if (onto) {
+                if (this.attach_stacked(ext, onto, win)) {
+                    return;
+                }
+
                 if (this.attach_to_window(ext, onto, win, { auto: 0 })) {
                     return;
                 }
@@ -170,8 +223,8 @@ export class AutoTiler {
      *
      * ## Implementation Notes
      *
-     * - First tries to tile onto the focused window
-     * - Then tries to tile onto a monitor
+     * - First tries to stack onto the focused window as a tab
+     * - Then tries to stack onto a monitor workspace
      */
     auto_tile(ext: Ext, win: ShellWindow, ignore_focus: boolean = false) {
         const result = this.fetch_mode(ext, win, ignore_focus);
@@ -180,8 +233,10 @@ export class AutoTiler {
             log.debug(`attach to workspace: ${result.value}`);
             this.attach_to_workspace(ext, win, ext.workspace_id(win));
         } else {
-            log.debug(`attaching to window ${win.entity}`);
-            this.attach_to_window(ext, result.value, win, { auto: 0 });
+            log.debug(`stacking window ${win.entity} onto ${result.value.entity}`);
+            if (!this.attach_stacked(ext, result.value, win)) {
+                this.attach_to_window(ext, result.value, win, { auto: 0 });
+            }
         }
     }
 
@@ -378,7 +433,7 @@ export class AutoTiler {
                 ? fork.area
                 : attach_to.meta.get_frame_rect();
 
-        let placement: null | MoveBy = cursor_placement(ext, attach_area, cursor);
+        let placement: null | MoveBy = cursor_placement(attach_area, cursor);
         const stack = ext.auto_tiler?.find_stack(attach_to.entity);
 
         const matching_stack = win.stack !== null && win.stack === attach_to.stack;
@@ -506,6 +561,11 @@ export class AutoTiler {
         }
     }
 
+    /** Permanent stack mode: stacking is not optional.
+     *
+     * Plain windows are converted into stacks, but windows that are already
+     * stacked are never unstacked. This makes Super+S a stack-only shortcut.
+     */
     toggle_stacking(ext: Ext, window?: ShellWindow) {
         const focused = window ?? ext.focus_window();
         if (!focused) return;
@@ -514,7 +574,12 @@ export class AutoTiler {
         if (ext.contains_tag(focused.entity, Tags.Floating)) {
             ext.delete_tag(focused.entity, Tags.Floating);
             this.auto_tile(ext, focused, false);
+            this.ensure_stacked(ext, focused);
+            return;
         }
+
+        // Already in a stack: permanent mode never leaves stack mode.
+        if (focused.stack !== null) return;
 
         const fork_entity = this.attached.get(focused.entity);
 
@@ -706,11 +771,11 @@ export class AutoTiler {
  *
  * A null indicates that the window should be stacked
  */
-export function cursor_placement(ext: Ext, area: Rectangular, cursor: Rectangular): null | MoveByCursor {
+export function cursor_placement(area: Rectangular, cursor: Rectangular): null | MoveByCursor {
     const { LEFT, RIGHT, TOP, BOTTOM } = geom.Side;
     const { HORIZONTAL, VERTICAL } = lib.Orientation;
 
-    const [, side] = geom.nearest_side(ext, [cursor.x, cursor.y], area);
+    const [, side] = geom.nearest_side([cursor.x, cursor.y], area);
 
     let res: null | [lib.Orientation, boolean] =
         side === LEFT

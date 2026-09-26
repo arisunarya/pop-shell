@@ -48,7 +48,7 @@ const ACTIVE_HINT_BAR_WIDTH = 56;
 
 /** Fixed height (thickness) of the floating active hint pill, in pixels.
  *  Matches the stack indicator thickness for a uniform pill style. */
-export const ACTIVE_HINT_BAR_HEIGHT = 4;
+export const ACTIVE_HINT_BAR_HEIGHT = 5;
 
 interface X11Info {
     normal_hints: once_cell.OnceCell<lib.SizeHint | null>;

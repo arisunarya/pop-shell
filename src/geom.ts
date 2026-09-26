@@ -1,5 +1,3 @@
-import type { Ext } from './extension.js';
-
 export enum Side {
     LEFT,
     TOP,
@@ -77,7 +75,7 @@ export function leftward_distance(win_a: Meta.Window, win_b: Meta.Window) {
     return directional_distance(win_a.get_frame_rect(), win_b.get_frame_rect(), east, west);
 }
 
-export function nearest_side(ext: Ext, origin: [number, number], rect: Rectangular): [number, Side] {
+export function nearest_side(origin: [number, number], rect: Rectangular): [number, Side] {
     const left = west(rect),
         top = north(rect),
         right = east(rect),
@@ -95,7 +93,8 @@ export function nearest_side(ext: Ext, origin: [number, number], rect: Rectangul
 
     if (top_distance < nearest[0]) nearest = [top_distance, Side.TOP];
     if (bottom_distance < nearest[0]) nearest = [bottom_distance, Side.BOTTOM];
-    if (ext.settings.stacking_with_mouse() && center_distance < nearest[0]) nearest = [center_distance, Side.CENTER];
+    // Permanent stack mode: the center (stack) drop zone is always active.
+    if (center_distance < nearest[0]) nearest = [center_distance, Side.CENTER];
 
     return nearest;
 }
