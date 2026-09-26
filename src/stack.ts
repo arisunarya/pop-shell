@@ -41,19 +41,18 @@ interface StackWidgets {
     tabs: St.Widget;
 }
 
-function stack_widgets_new(gap: number): StackWidgets {
+function stack_widgets_new(): StackWidgets {
     let tabs = new St.BoxLayout({
         style_class: 'pop-shell-stack',
         x_expand: true,
     });
 
-    // Transparent container floating in the gap; spacing gives the
-    // margin gap between pill bars.
-    tabs.set_style(
-        `background: transparent; border-width: 0; padding: 0; margin: 0; spacing: ${gap}px;`,
-    );
+    // Transparent container floating in the gap. Inter-pill whitespace is
+    // NOT container spacing (dead to clicks) but button padding, so the
+    // whole strip is clickable while looking identical.
+    tabs.set_style('background: transparent; border-width: 0; padding: 0; margin: 0; spacing: 0px;');
     try {
-        (tabs as any).spacing = gap;
+        (tabs as any).spacing = 0;
     } catch (_e) {}
 
     return { tabs };
@@ -82,6 +81,7 @@ const TabButton = GObject.registerClass(
 
             this.bar = new St.Widget({
                 x_expand: true,
+                x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
             });
             this.set_child(this.bar);
@@ -128,9 +128,9 @@ export class Stack {
         this.active = active;
         this.monitor = monitor;
         this.workspace = workspace;
-        this.tabs_height = Math.max(TAB_HEIGHT * this.ext.dpi, this.pill_thickness());
+        this.tabs_height = Math.max(this.ext.gap_inner, this.pill_thickness());
 
-        this.widgets = stack_widgets_new(this.segment_gap());
+            this.widgets = stack_widgets_new();
 
         global.window_group.add_child(this.widgets.tabs);
 
@@ -259,11 +259,17 @@ export class Stack {
             width = SEGMENT_ACTIVE_WIDTH * this.ext.dpi;
         }
 
-        button.width = width;
-        // Gap between pills is provided by the tabs container spacing
-        // (see stack_widgets_new); keep button margins at zero so the
-        // measured total_width (widths + GAP*(n-1)) stays exact.
-        button.set_style('background: transparent; border-width: 0; padding: 0; margin: 0;');
+        // Inter-pill whitespace is button padding (clickable), not container
+        // spacing or margins (dead to clicks). The bar keeps its exact pill
+        // width and stays centered via x_align, so the UI looks identical
+        // while the whole strip — pills plus the whitespace between them —
+        // is clickable. Keep the measured total_width in sync: each button
+        // contributes width + 2 * side.
+        const side = this.segment_gap() / 2;
+        button.width = width + side * 2;
+        button.set_style(
+            `background: transparent; border-width: 0; padding: 0 ${side}px; margin: 0;`,
+        );
 
         button.bar.width = width;
         const thickness = this.pill_thickness();
@@ -448,7 +454,7 @@ export class Stack {
     recreate_widgets() {
         if (this.widgets !== null) {
             this.widgets.tabs.disconnect(this.tabs_destroy);
-            this.widgets = stack_widgets_new(this.segment_gap());
+        this.widgets = stack_widgets_new();
 
             global.window_group.add_child(this.widgets.tabs);
 
@@ -631,11 +637,14 @@ export class Stack {
 
         this.rect = rect;
 
-        // Container must fit the bar, whose thickness follows the gap setting.
-        this.tabs_height = Math.max(TAB_HEIGHT * this.ext.dpi, this.pill_thickness());
+        // The strip spans the full gap band vertically so the whole area —
+        // pills plus surrounding whitespace — is clickable. Bars stay
+        // centered via y_align, so the UI looks identical.
+        this.tabs_height = Math.max(this.ext.gap_inner, this.pill_thickness());
 
         // Size each pill segment and center the whole strip with gaps;
-        // it floats in the gap, taking no layout space.
+        // it floats in the gap, taking no layout space. Each button is
+        // wider than its bar by the clickable side padding (see paint_tab).
         const segment_gap = this.segment_gap();
         let total_width = 0;
         this.tabs.forEach((tab, idx) => {
@@ -646,16 +655,15 @@ export class Stack {
             total_width += width + segment_gap;
             const button = this.buttons.get(tab.button);
             if (button) {
-                button.width = width;
+                button.width = width + segment_gap;
                 button.height = this.tabs_height;
             }
         });
-        if (this.tabs.length > 0) total_width -= segment_gap;
 
-        // Center the strip vertically on the inner gap above the window
-        // (the panel keeps outer == inner, so this holds at the screen
-        // edge too). Bars are centered in the container, so they land on
-        // the gap middle as well.
+        // Center the strip on the inner gap above the window (the panel
+        // keeps outer == inner, so this holds at the screen edge too).
+        // Bars are centered in the container, so they land on the gap
+        // middle as well.
         const gap_half = this.ext.gap_inner_half;
 
         this.stack_rect = {
@@ -670,14 +678,13 @@ export class Stack {
         this.widgets.tabs.height = this.tabs_height;
         this.widgets.tabs.width = this.stack_rect.width;
 
-        // Keep the visual gap identical to the measured one so the
-        // strip width stays exact.
-        const gap = segment_gap;
+        // No container spacing: inter-pill whitespace lives in the button
+        // padding (clickable), keeping the measured width exact.
         try {
-            (this.widgets.tabs as any).spacing = gap;
+            (this.widgets.tabs as any).spacing = 0;
         } catch (_e) {}
         this.widgets.tabs.set_style(
-            `background: transparent; border-width: 0; padding: 0; margin: 0; spacing: ${gap}px;`,
+            'background: transparent; border-width: 0; padding: 0; margin: 0; spacing: 0px;',
         );
 
         // Bar thickness also follows the gap setting, but bars are only
