@@ -2,88 +2,149 @@ import type { Ext } from './extension.js';
 
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GObject from 'gi://GObject';
 import St from 'gi://St';
 
 import {
     PopupBaseMenuItem,
     PopupMenuItem,
-    PopupSwitchMenuItem,
     PopupSeparatorMenuItem,
 } from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import { Button } from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 import GLib from 'gi://GLib';
 import { spawn } from 'resource:///org/gnome/shell/misc/util.js';
 import { get_current_path } from './paths.js';
 import { MAX_GAP, MIN_GAP } from './settings.js';
 
-export class Indicator {
-    button: any;
-    appearances: any;
+export var TileToggle = GObject.registerClass(
+    class TileToggle extends QuickSettings.QuickMenuToggle {
+        ext: any;
 
-    toggle_tiled: any;
+        _init(ext: Ext) {
+            const path = get_current_path();
+            if (!ext.button_gio_icon_auto_on) {
+                ext.button_gio_icon_auto_on = Gio.icon_new_for_string(
+                    `${path}/icons/pop-shell-auto-on-symbolic.svg`,
+                );
+                ext.button_gio_icon_auto_off = Gio.icon_new_for_string(
+                    `${path}/icons/pop-shell-auto-off-symbolic.svg`,
+                );
+            }
 
-    entry_gaps: any;
+            const active = null != ext.auto_tiler || ext.settings.tile_by_default();
 
-    constructor(ext: Ext) {
-        this.button = new Button(0.0, _('Pop Shell Settings'));
+            super._init({
+                title: _('Tile Windows'),
+                subtitle: active ? _('Tiling') : _('Floating'),
+                gicon: active ? ext.button_gio_icon_auto_on : ext.button_gio_icon_auto_off,
+                toggleMode: true,
+            });
 
-        const path = get_current_path();
-        ext.button = this.button;
-        ext.button_gio_icon_auto_on = Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-on-symbolic.svg`);
-        ext.button_gio_icon_auto_off = Gio.icon_new_for_string(`${path}/icons/pop-shell-auto-off-symbolic.svg`);
+            this.ext = ext;
+            // Keep Ext.button pointing at the toggle for icon sync in Ext.auto_tile_on/off
+            ext.button = this;
 
-        let button_icon_auto_on = new St.Icon({
-            gicon: ext.button_gio_icon_auto_on,
-            style_class: 'system-status-icon',
-        });
-        let button_icon_auto_off = new St.Icon({
-            gicon: ext.button_gio_icon_auto_off,
-            style_class: 'system-status-icon',
-        });
+            this.checked = active;
 
-        if (ext.settings.tile_by_default()) {
-            this.button.icon = button_icon_auto_on;
-        } else {
-            this.button.icon = button_icon_auto_off;
+            this.menu.setHeader(
+                active ? ext.button_gio_icon_auto_on : ext.button_gio_icon_auto_off,
+                _('Tile Windows'),
+                active ? _('Tiling') : _('Floating'),
+            );
+
+            // Dropdown content, moved from the old top-bar menu:
+            // Floating exceptions, Shortcuts, Active Hint Color, Gaps.
+            this.menu.addMenuItem(floating_window_exceptions(ext, this.menu));
+            this.menu.addMenuItem(menu_separator(''));
+            this.menu.addMenuItem(shortcuts(this.menu));
+            this.menu.addMenuItem(menu_separator(''));
+            this.menu.addMenuItem(color_selector(ext, this.menu));
+            this.menu.addMenuItem(
+                number_entry(
+                    _('Gaps'),
+                    {
+                        value: Math.min(Math.max(ext.settings.gap_inner(), MIN_GAP), MAX_GAP),
+                        min: MIN_GAP,
+                        max: MAX_GAP,
+                    },
+                    (value) => {
+                        ext.settings.set_gap_inner(value);
+                        ext.settings.set_gap_outer(value);
+                    },
+                ),
+            );
+
+            this.connect('clicked', () => {
+                if (this.checked) {
+                    ext.auto_tile_on();
+                } else {
+                    ext.auto_tile_off();
+                }
+            });
         }
 
-        this.button.add_child(this.button.icon);
+        sync(active: boolean) {
+            if (this.checked !== active) {
+                this.checked = active;
+            }
+            const gicon = active ? this.ext.button_gio_icon_auto_on : this.ext.button_gio_icon_auto_off;
+            this.gicon = gicon;
+            const subtitle = active ? _('Tiling') : _('Floating');
+            this.subtitle = subtitle;
+            this.menu.setHeader(gicon, _('Tile Windows'), subtitle);
+        }
 
-        let bm = this.button.menu;
+        // Compat for old indicator.toggle_tiled.setToggleState(bool) callers
+        setToggleState(active: boolean) {
+            this.sync(active);
+        }
+    },
+);
 
-        this.toggle_tiled = tiled(ext);
+export var Indicator = GObject.registerClass(
+    class Indicator extends QuickSettings.SystemIndicator {
+        toggle: any;
+        // Compat alias: old code used indicator.toggle_tiled.setToggleState(bool)
+        toggle_tiled: any;
+        entry_gaps: any;
 
-        // Pills live in the gap and scale with it: clamp to [MIN_GAP, MAX_GAP].
-        this.entry_gaps = number_entry(
-            _('Gaps'),
-            {
-                value: Math.min(Math.max(ext.settings.gap_inner(), MIN_GAP), MAX_GAP),
-                min: MIN_GAP,
-                max: MAX_GAP,
-            },
-            (value) => {
-                ext.settings.set_gap_inner(value);
-                ext.settings.set_gap_outer(value);
-            },
-        );
+        _indicator: any;
 
-        bm.addMenuItem(this.toggle_tiled);
-        bm.addMenuItem(floating_window_exceptions(ext, bm));
+        _init(ext: Ext) {
+            super._init();
 
-        bm.addMenuItem(menu_separator(''));
-        bm.addMenuItem(shortcuts(bm));
-        bm.addMenuItem(menu_separator(''));
+            const path = get_current_path();
+            ext.button_gio_icon_auto_on = Gio.icon_new_for_string(
+                `${path}/icons/pop-shell-auto-on-symbolic.svg`,
+            );
+            ext.button_gio_icon_auto_off = Gio.icon_new_for_string(
+                `${path}/icons/pop-shell-auto-off-symbolic.svg`,
+            );
 
-        // CSS Selector
-        bm.addMenuItem(color_selector(ext, bm));
+            this._indicator = this._addIndicator();
+            this._indicator.gicon =
+                ext.settings.tile_by_default() || null != ext.auto_tiler
+                    ? ext.button_gio_icon_auto_on
+                    : ext.button_gio_icon_auto_off;
 
-        bm.addMenuItem(this.entry_gaps);
-    }
+            this.toggle = new TileToggle(ext);
+            this.toggle_tiled = this.toggle;
+            this.quickSettingsItems.push(this.toggle);
+        }
 
-    destroy() {
-        this.button.destroy();
-    }
-}
+        setTileActive(active: boolean) {
+            this.toggle.sync(active);
+            this._indicator.gicon = active
+                ? this.toggle.ext.button_gio_icon_auto_on
+                : this.toggle.ext.button_gio_icon_auto_off;
+        }
+
+        destroy() {
+            this.quickSettingsItems.forEach((item: any) => item.destroy());
+            super.destroy();
+        }
+    },
+);
 
 function menu_separator(text: any): any {
     return new PopupSeparatorMenuItem(text);
@@ -230,30 +291,6 @@ function parse_number(text: string): number {
     }
 
     return number;
-}
-
-function toggle(desc: string, active: boolean, connect: (toggle: any, state: boolean) => void): any {
-    let toggle = new PopupSwitchMenuItem(desc, active);
-
-    toggle.label.set_y_align(Clutter.ActorAlign.CENTER);
-
-    toggle.connect('toggled', (_: any, state: boolean) => {
-        connect(toggle, state);
-        return true;
-    });
-
-    return toggle;
-}
-
-function tiled(ext: Ext): any {
-    let t = toggle(_('Tile Windows'), null != ext.auto_tiler, (_, shouldTile) => {
-        if (shouldTile) {
-            ext.auto_tile_on();
-        } else {
-            ext.auto_tile_off();
-        }
-    });
-    return t;
 }
 
 function color_selector(ext: Ext, menu: any) {

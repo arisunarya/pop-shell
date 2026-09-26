@@ -27,7 +27,6 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import type { Entity } from './ecs.js';
 import type { ExtEvent } from './events.js';
 import { Rectangle } from './rectangle.js';
-import type { Indicator } from './panel_settings.js';
 
 import { Fork } from './fork.js';
 
@@ -56,7 +55,6 @@ const {
     layoutManager,
     loadTheme,
     overview,
-    panel,
     setThemeStylesheet,
     screenShield,
     sessionMode,
@@ -1898,7 +1896,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
         this.connect(sessionMode, 'updated', () => {
             if (indicator) {
-                indicator.button.visible = !sessionMode.isLocked;
+                indicator.visible = !sessionMode.isLocked;
             }
 
             if (sessionMode.isLocked) {
@@ -2171,9 +2169,11 @@ export class Ext extends Ecs.System<ExtEvent> {
             this.auto_tiler = null;
             this.settings.set_tile_by_default(false);
 
-            if (indicator) indicator.toggle_tiled.setToggleState(false);
-
-            this.button.icon.gicon = this.button_gio_icon_auto_off; // type: Gio.Icon
+            if (indicator) {
+                indicator.setTileActive(false);
+            } else if (this.button) {
+                this.button.gicon = this.button_gio_icon_auto_off;
+            }
 
             this.show_border_on_focused();
         }
@@ -2183,7 +2183,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.settings.set_edge_tiling(false);
         this.hide_all_borders();
 
-        if (indicator) indicator.toggle_tiled.setToggleState(true);
+        if (indicator) indicator.setTileActive(true);
 
         const original = this.active_workspace();
 
@@ -2197,7 +2197,9 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.auto_tiler = tiler;
 
         this.settings.set_tile_by_default(true);
-        this.button.icon.gicon = this.button_gio_icon_auto_on; // type: Gio.Icon
+        if (!indicator && this.button) {
+            this.button.gicon = this.button_gio_icon_auto_on;
+        }
 
         for (const window of this.windows.values()) {
             if (window.is_tilable(this)) {
@@ -2618,7 +2620,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 }
 
 let ext: Ext | null = null;
-let indicator: Indicator | null = null;
+let indicator: any | null = null;
 
 declare global {
     var popShellExtension: any;
@@ -2657,7 +2659,7 @@ export default class PopShellExtension extends Extension {
 
         if (!indicator) {
             indicator = new PanelSettings.Indicator(ext);
-            panel.addToStatusArea('pop-shell', indicator.button);
+            Main.panel.statusArea.quickSettings.addExternalIndicator(indicator);
         }
 
         ext.keybindings.enable(ext.keybindings.global).enable(ext.keybindings.window_focus);
