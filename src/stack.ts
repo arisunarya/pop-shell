@@ -27,12 +27,7 @@ const SEGMENT_ACTIVE_WIDTH = 56;
  *  width so all pills in the strip share one size. */
 const SEGMENT_INACTIVE_WIDTH = 56;
 
-/** Thickness of the stack pill, in pixels. Matches the active hint bar
- *  so both indicators share the same visual language. */
-const SEGMENT_LINE = 5;
 
-/** Horizontal margin gap between pill bars, in pixels. */
-const SEGMENT_GAP = 6;
 
 interface Tab {
     active: boolean;
@@ -46,7 +41,7 @@ interface StackWidgets {
     tabs: St.Widget;
 }
 
-function stack_widgets_new(): StackWidgets {
+function stack_widgets_new(gap: number): StackWidgets {
     let tabs = new St.BoxLayout({
         style_class: 'pop-shell-stack',
         x_expand: true,
@@ -55,10 +50,10 @@ function stack_widgets_new(): StackWidgets {
     // Transparent container floating in the gap; spacing gives the
     // margin gap between pill bars.
     tabs.set_style(
-        `background: transparent; border-width: 0; padding: 0; margin: 0; spacing: ${SEGMENT_GAP}px;`,
+        `background: transparent; border-width: 0; padding: 0; margin: 0; spacing: ${gap}px;`,
     );
     try {
-        (tabs as any).spacing = SEGMENT_GAP;
+        (tabs as any).spacing = gap;
     } catch (_e) {}
 
     return { tabs };
@@ -133,9 +128,9 @@ export class Stack {
         this.active = active;
         this.monitor = monitor;
         this.workspace = workspace;
-        this.tabs_height = TAB_HEIGHT * this.ext.dpi;
+        this.tabs_height = Math.max(TAB_HEIGHT * this.ext.dpi, this.pill_thickness());
 
-        this.widgets = stack_widgets_new();
+        this.widgets = stack_widgets_new(this.segment_gap());
 
         global.window_group.add_child(this.widgets.tabs);
 
@@ -271,10 +266,21 @@ export class Stack {
         button.set_style('background: transparent; border-width: 0; padding: 0; margin: 0;');
 
         button.bar.width = width;
-        button.bar.height = SEGMENT_LINE * this.ext.dpi;
-        button.bar.set_style(
-            `background-color: ${color}; border-radius: ${SEGMENT_LINE * this.ext.dpi}px;`,
-        );
+        const thickness = this.pill_thickness();
+        button.bar.height = thickness;
+        button.bar.set_style(`background-color: ${color}; border-radius: ${thickness}px;`);
+    }
+
+    /** Thickness of a stack pill: the window gaps setting in dpi-aware
+     *  pixels (gap 5 == 5px tall), matching the active hint pill. */
+    pill_thickness(): number {
+        return this.ext.settings.gap_inner() * this.ext.dpi;
+    }
+
+    /** Horizontal gap between pill bars: half the window inner gap, so the
+     *  strip spacing follows the window gaps setting. */
+    segment_gap(): number {
+        return this.ext.gap_inner_half;
     }
 
     /** Connects `on_window_changed` callbacks to the newly-active window */
@@ -442,7 +448,7 @@ export class Stack {
     recreate_widgets() {
         if (this.widgets !== null) {
             this.widgets.tabs.disconnect(this.tabs_destroy);
-            this.widgets = stack_widgets_new();
+            this.widgets = stack_widgets_new(this.segment_gap());
 
             global.window_group.add_child(this.widgets.tabs);
 
@@ -625,24 +631,26 @@ export class Stack {
 
         this.rect = rect;
 
-        this.tabs_height = TAB_HEIGHT * this.ext.dpi;
+        // Container must fit the bar, whose thickness follows the gap setting.
+        this.tabs_height = Math.max(TAB_HEIGHT * this.ext.dpi, this.pill_thickness());
 
         // Size each pill segment and center the whole strip with gaps;
         // it floats in the gap, taking no layout space.
+        const segment_gap = this.segment_gap();
         let total_width = 0;
         this.tabs.forEach((tab, idx) => {
             const width =
                 idx === this.active_id
                     ? SEGMENT_ACTIVE_WIDTH * this.ext.dpi
                     : SEGMENT_INACTIVE_WIDTH * this.ext.dpi;
-            total_width += width + SEGMENT_GAP * this.ext.dpi;
+            total_width += width + segment_gap;
             const button = this.buttons.get(tab.button);
             if (button) {
                 button.width = width;
                 button.height = this.tabs_height;
             }
         });
-        if (this.tabs.length > 0) total_width -= SEGMENT_GAP * this.ext.dpi;
+        if (this.tabs.length > 0) total_width -= segment_gap;
 
         // Center the strip vertically on the inner gap above the window
         // (the panel keeps outer == inner, so this holds at the screen
@@ -662,14 +670,20 @@ export class Stack {
         this.widgets.tabs.height = this.tabs_height;
         this.widgets.tabs.width = this.stack_rect.width;
 
-        // Keep the visual gap dpi-aware so measured width stays exact.
-        const gap = SEGMENT_GAP * this.ext.dpi;
+        // Keep the visual gap identical to the measured one so the
+        // strip width stays exact.
+        const gap = segment_gap;
         try {
             (this.widgets.tabs as any).spacing = gap;
         } catch (_e) {}
         this.widgets.tabs.set_style(
             `background: transparent; border-width: 0; padding: 0; margin: 0; spacing: ${gap}px;`,
         );
+
+        // Bar thickness also follows the gap setting, but bars are only
+        // repainted on focus changes — refresh them here so a gap edit
+        // resizes existing pills immediately.
+        this.refresh_tab_colors();
     }
 
     private watch_signals(comp: number, button: number, window: ShellWindow) {

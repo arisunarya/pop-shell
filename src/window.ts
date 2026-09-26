@@ -46,9 +46,7 @@ enum RESTACK_SPEED {
  *  (stacked) share the same visual language. */
 const ACTIVE_HINT_BAR_WIDTH = 56;
 
-/** Fixed height (thickness) of the floating active hint pill, in pixels.
- *  Matches the stack indicator thickness for a uniform pill style. */
-export const ACTIVE_HINT_BAR_HEIGHT = 5;
+
 
 interface X11Info {
     normal_hints: once_cell.OnceCell<lib.SizeHint | null>;
@@ -569,9 +567,10 @@ export class ShellWindow {
             // Floating pill, same language as the stack indicator (`---`
             // for single, `--- --- ---` for stacked). It takes no layout
             // space and sits vertically centered in the gap above the
-            // window, inline with the stack pills.
+            // window, inline with the stack pills. Thickness follows the
+            // window gaps setting (gap 5 == 5px tall).
             const dpi = this.ext.dpi;
-            const thickness = ACTIVE_HINT_BAR_HEIGHT * dpi;
+            const thickness = this.hint_thickness();
             const barWidth = Math.min(ACTIVE_HINT_BAR_WIDTH * dpi, width);
 
             // Centered on the inner gap above the window (the panel
@@ -587,10 +586,16 @@ export class ShellWindow {
         }
     }
 
+    /** Thickness of the floating active hint pill: the window gaps
+     *  setting in dpi-aware pixels, matching the stack pills. */
+    hint_thickness(): number {
+        return this.ext.settings.gap_inner() * this.ext.dpi;
+    }
+
     update_border_style() {
         const { settings } = this.ext;
         const color_value = settings.hint_color_rgba();
-        const thickness = ACTIVE_HINT_BAR_HEIGHT * this.ext.dpi;
+        const thickness = this.hint_thickness();
         if (this.border) {
             this.border.set_style(
                 `background-color: ${color_value}; border-width: 0px; border-radius: ${thickness}px;`,
