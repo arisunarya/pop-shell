@@ -1178,8 +1178,6 @@ export class Ext extends Ecs.System<ExtEvent> {
                     log.error(`no fork entity found`);
                 }
             }
-        } else if (this.settings.snap_to_grid()) {
-            this.tiler.snap(this, win);
         }
     }
 

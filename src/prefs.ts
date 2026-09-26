@@ -13,7 +13,6 @@ interface AppWidgets {
     mouse_cursor_follows_active_window: any;
     outer_gap: any;
     show_skip_taskbar: any;
-    snap_to_grid: any;
     mouse_cursor_focus_position: any;
     max_window_width: any;
 }
@@ -36,12 +35,6 @@ function settings_dialog_new(): Gtk.Container {
     let [app, grid] = settings_dialog_view();
 
     let ext = new settings.ExtensionSettings();
-
-    app.snap_to_grid.set_active(ext.snap_to_grid());
-    app.snap_to_grid.connect('state-set', (_widget: any, state: boolean) => {
-        ext.set_snap_to_grid(state);
-        Settings.sync();
-    });
 
     app.outer_gap.set_text(String(ext.gap_outer()));
     app.outer_gap.connect('activate', (widget: any) => {
@@ -101,11 +94,6 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         margin_top: 10,
     });
 
-    const snap_label = new Gtk.Label({
-        label: 'Snap to Grid (Floating Mode)',
-        xalign: 0.0,
-    });
-
     const show_skip_taskbar_label = new Gtk.Label({
         label: 'Show Minimize to Tray Windows',
         xalign: 0.0,
@@ -126,15 +114,11 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
     const settings = {
         inner_gap,
         outer_gap,
-        snap_to_grid: new Gtk.Switch({ halign: Gtk.Align.END }),
         show_skip_taskbar: new Gtk.Switch({ halign: Gtk.Align.END }),
         mouse_cursor_follows_active_window: new Gtk.Switch({ halign: Gtk.Align.END }),
         mouse_cursor_focus_position: build_combo(grid, 6, focus.FocusPosition, 'Mouse Cursor Focus Position'),
         max_window_width: number_entry(),
     };
-
-    grid.attach(snap_label, 0, 0, 1, 1);
-    grid.attach(settings.snap_to_grid, 1, 0, 1, 1);
 
     grid.attach(show_skip_taskbar_label, 0, 4, 1, 1);
     grid.attach(settings.show_skip_taskbar, 1, 4, 1, 1);

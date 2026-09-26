@@ -54,7 +54,6 @@ const EDGE_TILING = 'edge-tiling';
 const GAP_INNER = 'gap-inner';
 const GAP_OUTER = 'gap-outer';
 const ROW_SIZE = 'row-size';
-const SNAP_TO_GRID = 'snap-to-grid';
 const TILE_BY_DEFAULT = 'tile-by-default';
 const HINT_COLOR_RGBA = 'hint-color-rgba';
 const DEFAULT_RGBA_COLOR = 'rgba(251, 184, 108, 1)'; //pop-orange
@@ -115,10 +114,6 @@ export class ExtensionSettings {
         return this.ext.get_uint(ROW_SIZE);
     }
 
-    snap_to_grid(): boolean {
-        return this.ext.get_boolean(SNAP_TO_GRID);
-    }
-
     tile_by_default(): boolean {
         return this.ext.get_boolean(TILE_BY_DEFAULT);
     }
@@ -173,10 +168,6 @@ export class ExtensionSettings {
 
     set_row_size(size: number) {
         this.ext.set_uint(ROW_SIZE, size);
-    }
-
-    set_snap_to_grid(set: boolean) {
-        this.ext.set_boolean(SNAP_TO_GRID, set);
     }
 
     set_tile_by_default(set: boolean) {
