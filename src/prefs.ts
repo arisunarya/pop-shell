@@ -17,9 +17,9 @@ interface AppWidgets {
     max_window_width: any;
 }
 
-export default class PopShellPreferences extends ExtensionPreferences {
+export default class SlopShellPreferences extends ExtensionPreferences {
     getPreferencesWidget() {
-        globalThis.popShellExtension = this;
+        globalThis.slopShellExtension = this;
         let dialog = settings_dialog_new();
         if (dialog.show_all) {
             dialog.show_all();

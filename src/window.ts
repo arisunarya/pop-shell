@@ -70,7 +70,7 @@ export class ShellWindow {
     reassignment: boolean = false;
 
     border: null | St.Bin = new St.Bin({
-        style_class: 'pop-shell-active-hint pop-shell-border-normal',
+        style_class: 'slop-shell-active-hint slop-shell-border-normal',
     });
 
     prev_rect: null | Rectangular = null;
@@ -559,9 +559,9 @@ export class ShellWindow {
 
         if (border) {
             if (!(this.is_max_screen() || this.is_snap_edge())) {
-                border.remove_style_class_name('pop-shell-border-maximize');
+                border.remove_style_class_name('slop-shell-border-maximize');
             } else {
-                border.add_style_class_name('pop-shell-border-maximize');
+                border.add_style_class_name('slop-shell-border-maximize');
             }
 
             // Floating pill, same language as the stack indicator (`---`

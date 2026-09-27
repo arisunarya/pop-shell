@@ -1,9 +1,9 @@
 {
-    "name": "Pop Shell",
-    "description": "Pop Shell",
+    "name": "Slop Shell",
+    "description": "Slop Shell",
     "version": 2,
-    "uuid": "pop-shell@system76.com",
-    "settings-schema": "org.gnome.shell.extensions.pop-shell",
+    "uuid": "slop-shell@arisunarya",
+    "settings-schema": "org.gnome.shell.extensions.slop-shell",
     "shell-version": [
         "45",
         "46",

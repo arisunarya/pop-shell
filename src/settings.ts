@@ -42,7 +42,7 @@ function settings_new_schema(schema: string): Settings {
 
     if (!schemaObj) {
         throw new Error(
-            'Schema ' + schema + ' could not be found for extension pop-shell' + '. Please check your installation.',
+            'Schema ' + schema + ' could not be found for extension slop-shell' + '. Please check your installation.',
         );
     }
 
@@ -68,7 +68,7 @@ export const MIN_GAP = 3;
 export const MAX_GAP = 10;
 
 export class ExtensionSettings {
-    ext: Settings = settings_new_schema('org.gnome.shell.extensions.pop-shell');
+    ext: Settings = settings_new_schema('org.gnome.shell.extensions.slop-shell');
     int: Settings | null = settings_new_id('org.gnome.desktop.interface');
     mutter: Settings | null = settings_new_id('org.gnome.mutter');
     shell: Settings | null = settings_new_id('org.gnome.shell.extensions.user-theme');

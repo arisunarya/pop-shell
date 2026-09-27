@@ -1,10 +1,10 @@
-# Pop Shell
+# Slop Shell
 
-Pop Shell is a keyboard-driven layer for GNOME Shell which allows for quick and sensible navigation and management of windows. The core feature of Pop Shell is the addition of advanced tiling window management — a feature that has been highly sought within our community. For many — ourselves included — i3wm has become the leading competitor to the GNOME desktop.
+Slop Shell is a keyboard-driven layer for GNOME Shell which allows for quick and sensible navigation and management of windows. The core feature of Slop Shell is the addition of advanced tiling window management — a feature that has been highly sought within our community. For many — ourselves included — i3wm has become the leading competitor to the GNOME desktop.
 
 Tiling window management in GNOME is virtually nonexistent, which makes the desktop awkward to interact with when your needs exceed that of two windows at a given time. Luckily, GNOME Shell is an extensible desktop with the foundations that make it possible to implement a tiling window manager on top of the desktop.
 
-Therefore, we see an opportunity here to advance the usability of the GNOME desktop to better accommodate the needs of our community with Pop Shell. Advanced tiling window management is a must for the desktop, so we've merged i3-like tiling window management with the GNOME desktop for the best of both worlds.
+Therefore, we see an opportunity here to advance the usability of the GNOME desktop to better accommodate the needs of our community with Slop Shell. Advanced tiling window management is a must for the desktop, so we've merged i3-like tiling window management with the GNOME desktop for the best of both worlds.
 
 [![](./screenshot.webp)](https://raw.githubusercontent.com/pop-os/shell/master/screenshot.webp)
 
@@ -24,9 +24,9 @@ Therefore, we see an opportunity here to advance the usability of the GNOME desk
 
 ## The Proposal
 
-A proposal for integration of the tiling window management features from Pop Shell into GNOME is currently under development. It will be created as a GitLab issue on GNOME Shell for future discussion, once we have invested our time into producing a functioning prototype, and learned what does and does not work in practice.
+A proposal for integration of the tiling window management features from Slop Shell into GNOME is currently under development. It will be created as a GitLab issue on GNOME Shell for future discussion, once we have invested our time into producing a functioning prototype, and learned what does and does not work in practice.
 
-Ideally, the features explored in Pop Shell will be available for any environment using Mutter — far extending the half-monitor tiling capability currently present. By starting out as a shell extension, anyone using GNOME Shell can install this onto their system, without having to install a Pop-specific fork of GNOME on their system.
+Ideally, the features explored in Slop Shell will be available for any environment using Mutter — far extending the half-monitor tiling capability currently present. By starting out as a shell extension, anyone using GNOME Shell can install this onto their system, without having to install a Pop-specific fork of GNOME on their system.
 
 ---
 
@@ -75,7 +75,7 @@ Proper functionality of the shell requires modifying GNOME's default keyboard sh
 
 If you want to uninstall the extension, you may invoke `make uninstall`, and then open the "Keyboard Shortcuts" panel in GNOME Settings to select the "Reset All.." button in the header bar.
 
-> Note that if you are packaging for your Linux distribution, many features in Pop Shell will not work out of the box because they require changes to GNOME's default keyboard shortcuts. A local install is necessary if you aren't packaging your GNOME session with these default keyboard shortcuts unset or changed.
+> Note that if you are packaging for your Linux distribution, many features in Slop Shell will not work out of the box because they require changes to GNOME's default keyboard shortcuts. A local install is necessary if you aren't packaging your GNOME session with these default keyboard shortcuts unset or changed.
 
 ### Packaging status
 
@@ -149,13 +149,13 @@ Gaps improve the aesthetics of tiled windows and make it easier to grab the edge
 
 ### Hiding Window Title Bars
 
-Windows with server-side decorations may have their title bars completely hidden, resulting in additional screen real estate for your applications, and a visually cleaner environment. This feature can be toggled in the extension's popup menu. Windows can be moved with the mouse by holding `Super` when clicking and dragging a window to another location, or using the keyboard shortcuts native to pop-shell. Windows may be closed by pressing `Super` + `Q`, and maximized with `Super` + `M`.
+Windows with server-side decorations may have their title bars completely hidden, resulting in additional screen real estate for your applications, and a visually cleaner environment. This feature can be toggled in the extension's popup menu. Windows can be moved with the mouse by holding `Super` when clicking and dragging a window to another location, or using the keyboard shortcuts native to slop-shell. Windows may be closed by pressing `Super` + `Q`, and maximized with `Super` + `M`.
 
 ---
 
 ## Floating Mode
 
-This is the default mode of Pop Shell, which combines traditional stacking window management, with optional tiling window management features.
+This is the default mode of Slop Shell, which combines traditional stacking window management, with optional tiling window management features.
 
 ### Display Grid
 
@@ -180,14 +180,14 @@ Disabled by default, this mode manages windows using a tree-based tiling window 
   - See [#customizing the window float list](#customizing-the-floating-window-list)
 
 ### Customizing the Floating Window List
-There is file `$XDG_CONFIG_HOME/pop-shell/config.json` where you can add the following structure:
+There is file `$XDG_CONFIG_HOME/slop-shell/config.json` where you can add the following structure:
 ```
 {
   class: "<WM_CLASS String from xprop>",
   title: "<Optional Window Title>"
 }
 ```
-For example, doing `xprop` on GNOME Settings (or GNOME Control Center), the WM_CLASS values are `gnome-control-center` and `Gnome-control-center`. Use the second value (Gnome-control-center), which pop-shell will read. The `title` field is optional.
+For example, doing `xprop` on GNOME Settings (or GNOME Control Center), the WM_CLASS values are `gnome-control-center` and `Gnome-control-center`. Use the second value (Gnome-control-center), which slop-shell will read. The `title` field is optional.
 
 After applying changes in `config.json`, you can reload the tiling if it doesn't work the first time.
 

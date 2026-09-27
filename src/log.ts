@@ -1,5 +1,5 @@
 export function log(text: string) {
-    (globalThis as any).log('pop-shell: ' + text);
+    (globalThis as any).log('slop-shell: ' + text);
 }
 
 export function error(text: string) {

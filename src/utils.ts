@@ -53,7 +53,7 @@ export function exists(path: string): boolean {
  * @param color - the RGBA or hex string value
  */
 export function is_dark(color: string): boolean {
-    // 'rgba(81, 162, 218, 1)' - pop blue!
+    // 'rgba(81, 162, 218, 1)' - slop blue!
     let color_val = '';
     let r = 255;
     let g = 255;

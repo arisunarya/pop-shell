@@ -8,10 +8,10 @@ endif
 
 ifeq ($(strip $(DESTDIR)),)
 INSTALLBASE = $(XDG_DATA_HOME)/gnome-shell/extensions
-SCRIPTS_BASE = $(XDG_DATA_HOME)/pop-shell/scripts
+SCRIPTS_BASE = $(XDG_DATA_HOME)/slop-shell/scripts
 else
 INSTALLBASE = $(DESTDIR)/usr/share/gnome-shell/extensions
-SCRIPTS_BASE = $(DESTDIR)/usr/lib/pop-shell/scripts
+SCRIPTS_BASE = $(DESTDIR)/usr/lib/slop-shell/scripts
 endif
 INSTALLNAME = $(UUID)
 
@@ -47,10 +47,10 @@ depcheck:
 	fi
 
 enable:
-	gnome-extensions enable "pop-shell@system76.com"
+	gnome-extensions enable "slop-shell@arisunarya"
 
 disable:
-	gnome-extensions disable "pop-shell@system76.com"
+	gnome-extensions disable "slop-shell@arisunarya"
 
 listen:
 	journalctl -o cat -n 0 -f "$$(which gnome-shell)" | grep -v warning

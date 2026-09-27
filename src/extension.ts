@@ -109,7 +109,7 @@ export class Ext extends Ecs.System<ExtEvent> {
     // Widgets
 
     /** An overlay which shows a preview of where a window will be moved */
-    overlay: St.Widget = new St.BoxLayout({ style_class: 'pop-shell-overlay', visible: false });
+    overlay: St.Widget = new St.BoxLayout({ style_class: 'slop-shell-overlay', visible: false });
 
     /** DBus */
     dbus: dbus_service.Service = new dbus_service.Service();
@@ -2623,12 +2623,12 @@ let ext: Ext | null = null;
 let indicator: any | null = null;
 
 declare global {
-    var popShellExtension: any;
+    var slopShellExtension: any;
 }
 
-export default class PopShellExtension extends Extension {
+export default class SlopShellExtension extends Extension {
     enable() {
-        globalThis.popShellExtension = this;
+        globalThis.slopShellExtension = this;
         log.info('enable');
 
         if (!ext) {
@@ -2677,7 +2677,7 @@ export default class PopShellExtension extends Extension {
                 return;
             }
 
-            delete globalThis.popShellExtension;
+            delete globalThis.slopShellExtension;
             ext.injections_remove();
             ext.signals_remove();
             ext.exit_modes();
@@ -2727,13 +2727,13 @@ function stylesheet_path(name: string) {
 
 // Supplements the loaded theme with the extension's theme.
 function load_theme(style: Style): string | any {
-    let pop_stylesheet = Number(style);
+    let slop_stylesheet = Number(style);
     try {
         const theme_context = St.ThemeContext.get_for_stage(global.stage);
 
         const existing_theme: null | any = theme_context.get_theme();
 
-        const pop_stylesheet_path = STYLESHEET_PATHS[pop_stylesheet];
+        const slop_stylesheet_path = STYLESHEET_PATHS[slop_stylesheet];
 
         if (existing_theme) {
             /* Must unload stylesheets, or else the previously loaded
@@ -2745,17 +2745,17 @@ function load_theme(style: Style): string | any {
             }
 
             // Merge theme update with pop shell styling
-            existing_theme.load_stylesheet(STYLESHEETS[pop_stylesheet]);
+            existing_theme.load_stylesheet(STYLESHEETS[slop_stylesheet]);
 
             // Perform theme update
             theme_context.set_theme(existing_theme);
         } else {
             // User does not have a theme loaded, so use pop styling + default
-            setThemeStylesheet(pop_stylesheet_path);
+            setThemeStylesheet(slop_stylesheet_path);
             loadTheme();
         }
 
-        return pop_stylesheet_path;
+        return slop_stylesheet_path;
     } catch (e) {
         log.error('failed to load stylesheet: ' + e);
         return null;
@@ -2781,14 +2781,14 @@ let default_getcaption_workspace: any;
 
 /**
  * Decorates the default gnome-shell workspace/overview handling
- * of skip_task_bar. And have those window types included in pop-shell.
+ * of skip_task_bar. And have those window types included in slop-shell.
  * Should only be called on extension#enable()
  *
  * NOTE to future maintainer:
  * Skip taskbar has been left out by upstream for a reason. And the
  * Shell.WindowTracker seems to skip handling skip taskbar windows, so they are
  * null or undefined. GNOME 40+ and lower version checking should be done to
- * constantly support having them within pop-shell.
+ * constantly support having them within slop-shell.
  *
  * Known skip taskbars ddterm, conky, guake, minimized to tray apps, etc.
  *
@@ -2932,7 +2932,7 @@ function _show_skip_taskbar_windows(ext: Ext) {
 }
 
 /**
- * This is the cleanup/restore of the decorator for skip_taskbar when pop-shell
+ * This is the cleanup/restore of the decorator for skip_taskbar when slop-shell
  * is disabled.
  * Should only be called on extension#disable()
  *

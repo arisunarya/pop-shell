@@ -10,7 +10,7 @@ To begin watching logs, open a terminal with the following command:
 journalctl -o cat -n 0 -f "$(which gnome-shell)" | grep -v warning
 ```
 
-Note that because the logs are from GNOME Shell, there will be messages from all installed extensions, and GNOME Shell itself. Pop Shell is fairly chatty though, so the majority of the logs should be from Pop Shell. Pop Shell logs are usually prepended with `pop-shell:`, but sometimes GNOME has internal errors and warnings surrounding those logs that could be useful for pointing to an issue that we can resolve in Pop Shell.
+Note that because the logs are from GNOME Shell, there will be messages from all installed extensions, and GNOME Shell itself. Slop Shell is fairly chatty though, so the majority of the logs should be from Slop Shell. Slop Shell logs are usually prepended with `slop-shell:`, but sometimes GNOME has internal errors and warnings surrounding those logs that could be useful for pointing to an issue that we can resolve in Slop Shell.
 
 ## Checklists
 
@@ -76,7 +76,7 @@ Tasks for a tester to verify when approving a patch. Use complex window layouts 
 
 ### Window Titles
 
-- [ ] Disabling window titles using global (Pop Shell) option works for Shell Shortcuts, LibreOffice, etc.
+- [ ] Disabling window titles using global (Slop Shell) option works for Shell Shortcuts, LibreOffice, etc.
 - [ ] Disabling window titles in Firefox works (Check debian and flatpak packages)
 
 ### Floating Exceptions

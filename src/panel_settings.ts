@@ -24,10 +24,10 @@ export var TileToggle = GObject.registerClass(
             const path = get_current_path();
             if (!ext.button_gio_icon_auto_on) {
                 ext.button_gio_icon_auto_on = Gio.icon_new_for_string(
-                    `${path}/icons/pop-shell-auto-on-symbolic.svg`,
+                    `${path}/icons/slop-shell-auto-on-symbolic.svg`,
                 );
                 ext.button_gio_icon_auto_off = Gio.icon_new_for_string(
-                    `${path}/icons/pop-shell-auto-off-symbolic.svg`,
+                    `${path}/icons/slop-shell-auto-off-symbolic.svg`,
                 );
             }
 
@@ -115,10 +115,10 @@ export var Indicator = GObject.registerClass(
 
             const path = get_current_path();
             ext.button_gio_icon_auto_on = Gio.icon_new_for_string(
-                `${path}/icons/pop-shell-auto-on-symbolic.svg`,
+                `${path}/icons/slop-shell-auto-on-symbolic.svg`,
             );
             ext.button_gio_icon_auto_off = Gio.icon_new_for_string(
-                `${path}/icons/pop-shell-auto-off-symbolic.svg`,
+                `${path}/icons/slop-shell-auto-off-symbolic.svg`,
             );
 
             this._indicator = this._addIndicator();
@@ -165,7 +165,8 @@ function shortcuts(menu: any): any {
     let item = new PopupBaseMenuItem();
     item.add_child(widget);
     item.connect('activate', () => {
-        let path: string | null = GLib.find_program_in_path('pop-shell-shortcuts');
+        let path: string | null =
+            GLib.find_program_in_path('slop-shell-shortcuts') ?? GLib.find_program_in_path('pop-shell-shortcuts');
         if (path) {
             spawn([path]);
         } else {

@@ -22,14 +22,14 @@ If this is a bug, please use the template below. If this is a question or genera
 
 
 
-**(6) Pop Shell version (run `apt policy pop-shell` or provide the latest commit if building locally):**
+**(6) Slop Shell version (run `apt policy pop-shell` or provide the latest commit if building locally):**
 <!--
 Use triple back ticks ```<value here>``` to paste the apt policy pop-shell value, so it formats nicely
 -->
 
 
 
-**(7) Where was Pop Shell installed from:**
+**(7) Where was Slop Shell installed from:**
 
 
 

@@ -43,7 +43,7 @@ interface StackWidgets {
 
 function stack_widgets_new(): StackWidgets {
     let tabs = new St.BoxLayout({
-        style_class: 'pop-shell-stack',
+        style_class: 'slop-shell-stack',
         x_expand: true,
     });
 
