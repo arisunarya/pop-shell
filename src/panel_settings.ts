@@ -34,7 +34,7 @@ export var TileToggle = GObject.registerClass(
             const active = null != ext.auto_tiler || ext.settings.tile_by_default();
 
             super._init({
-                title: _('Tile Windows'),
+                title: _('Slop Shell'),
                 subtitle: active ? _('Tiling') : _('Floating'),
                 gicon: active ? ext.button_gio_icon_auto_on : ext.button_gio_icon_auto_off,
                 toggleMode: true,
@@ -48,17 +48,16 @@ export var TileToggle = GObject.registerClass(
 
             this.menu.setHeader(
                 active ? ext.button_gio_icon_auto_on : ext.button_gio_icon_auto_off,
-                _('Tile Windows'),
+                _('Slop Shell'),
                 active ? _('Tiling') : _('Floating'),
             );
 
             // Dropdown content, moved from the old top-bar menu:
-            // Floating exceptions, Shortcuts, Active Hint Color, Gaps.
+            // Floating exceptions, Shortcuts, Gaps.
             this.menu.addMenuItem(floating_window_exceptions(ext, this.menu));
             this.menu.addMenuItem(menu_separator(''));
             this.menu.addMenuItem(shortcuts(this.menu));
             this.menu.addMenuItem(menu_separator(''));
-            this.menu.addMenuItem(color_selector(ext, this.menu));
             this.menu.addMenuItem(
                 number_entry(
                     _('Gaps'),
@@ -91,7 +90,7 @@ export var TileToggle = GObject.registerClass(
             this.gicon = gicon;
             const subtitle = active ? _('Tiling') : _('Floating');
             this.subtitle = subtitle;
-            this.menu.setHeader(gicon, _('Tile Windows'), subtitle);
+            this.menu.setHeader(gicon, _('Slop Shell'), subtitle);
         }
 
         // Compat for old indicator.toggle_tiled.setToggleState(bool) callers
@@ -292,45 +291,4 @@ function parse_number(text: string): number {
     }
 
     return number;
-}
-
-function color_selector(ext: Ext, menu: any) {
-    let color_selector_item = new PopupMenuItem('Active Hint Color');
-    let color_button = new St.Button();
-    let settings = ext.settings;
-    let selected_color = settings.hint_color_rgba();
-
-    // TODO, find a way to expand the button text, :)
-    color_button.label = '           '; // blank for now
-    color_button.set_style(`background-color: ${selected_color}; border: 2px solid lightgray; border-radius: 2px`);
-
-    settings.ext.connect('changed', (_, key) => {
-        if (key === 'hint-color-rgba') {
-            let color_value = settings.hint_color_rgba();
-            color_button.set_style(`background-color: ${color_value}; border: 2px solid lightgray; border-radius: 2px`);
-        }
-    });
-
-    color_button.set_x_align(Clutter.ActorAlign.END);
-    color_button.set_x_expand(false);
-
-    color_selector_item.label.get_clutter_text().set_x_expand(true);
-    color_selector_item.label.set_y_align(Clutter.ActorAlign.CENTER);
-
-    color_selector_item.add_child(color_button);
-    color_button.connect('button-press-event', () => {
-        let path = get_current_path() + '/color_dialog/main.js';
-        let resp = GLib.spawn_command_line_async(`gjs --module ${path}`);
-        if (!resp) {
-            return null;
-        }
-
-        // clean up and focus on the color dialog
-        GLib.timeout_add(GLib.PRIORITY_LOW, 300, () => {
-            menu.close();
-            return false;
-        });
-    });
-
-    return color_selector_item;
 }

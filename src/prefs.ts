@@ -1,5 +1,6 @@
 import Gtk from 'gi://Gtk';
 
+import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 const Settings = Gio.Settings;
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -9,6 +10,7 @@ import * as log from './log.js';
 import * as focus from './focus.js';
 
 interface AppWidgets {
+    hint_color: any;
     inner_gap: any;
     mouse_cursor_follows_active_window: any;
     outer_gap: any;
@@ -58,6 +60,16 @@ function settings_dialog_new(): Gtk.Container {
             ext.set_gap_inner(parsed);
             Settings.sync();
         }
+    });
+
+    const hint_rgba = new Gdk.RGBA();
+    if (!hint_rgba.parse(ext.hint_color_rgba())) {
+        hint_rgba.parse('rgba(81, 162, 218, 1)');
+    }
+    app.hint_color.set_rgba(hint_rgba);
+    app.hint_color.connect('color-set', (widget: any) => {
+        ext.set_hint_color_rgba(widget.get_rgba().to_string());
+        Settings.sync();
     });
 
     app.show_skip_taskbar.set_active(ext.show_skiptaskbar());
@@ -110,6 +122,11 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
         xalign: 0.0,
     });
 
+    const hint_color_label = new Gtk.Label({
+        label: 'Active Hint Color',
+        xalign: 0.0,
+    });
+
     const max_window_width_label = new Gtk.Label({
         label: 'Max window width (in pixels); 0 to disable',
         xalign: 0.0,
@@ -118,6 +135,7 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
     const [inner_gap, outer_gap] = gaps_section(grid, 8);
 
     const settings = {
+        hint_color: new Gtk.ColorButton({ halign: Gtk.Align.END }),
         inner_gap,
         outer_gap,
         show_skip_taskbar: new Gtk.Switch({ halign: Gtk.Align.END }),
@@ -131,6 +149,9 @@ function settings_dialog_view(): [AppWidgets, Gtk.Container] {
 
     grid.attach(mouse_cursor_follows_active_window_label, 0, 5, 1, 1);
     grid.attach(settings.mouse_cursor_follows_active_window, 1, 5, 1, 1);
+
+    grid.attach(hint_color_label, 0, 7, 1, 1);
+    grid.attach(settings.hint_color, 1, 7, 1, 1);
 
     grid.attach(max_window_width_label, 0, 11, 1, 1);
     grid.attach(settings.max_window_width, 1, 11, 1, 1);
