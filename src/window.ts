@@ -8,7 +8,6 @@ import * as xprop from './xprop.js';
 import type { Entity } from './ecs.js';
 import type { Ext } from './extension.js';
 import type { Rectangle } from './rectangle.js';
-import * as scheduler from './scheduler.js';
 import * as focus from './focus.js';
 
 import Gdk from 'gi://Gdk';
@@ -641,8 +640,6 @@ export function activate(ext: Ext, move_mouse: boolean, win: Meta.Window) {
 
         const workspace = win.get_workspace();
         if (!workspace) return;
-
-        scheduler.setForeground(win);
 
         win.unminimize();
         workspace.activate_with_focus(win, global.get_current_time());

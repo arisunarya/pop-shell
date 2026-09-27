@@ -54,7 +54,6 @@ export const DEFAULT_FLOAT_RULES: Array<FloatRule> = [
     { class: 'krunner' },
     { class: 'pritunl' },
     { class: 're.sonny.Junction' },
-    { class: 'system76-driver' },
     { class: 'tilda' },
     { class: 'zoom' },
     { class: '^.*action=join.*$' },

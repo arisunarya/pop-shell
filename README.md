@@ -75,18 +75,6 @@ Proper functionality of the shell requires modifying GNOME's default keyboard sh
 
 If you want to uninstall the extension, you may invoke `make uninstall`, and then open the "Keyboard Shortcuts" panel in GNOME Settings to select the "Reset All.." button in the header bar.
 
-> Note that if you are packaging for your Linux distribution, many features in Slop Shell will not work out of the box because they require changes to GNOME's default keyboard shortcuts. A local install is necessary if you aren't packaging your GNOME session with these default keyboard shortcuts unset or changed.
-
-### Packaging status
-
-- [Fedora](https://src.fedoraproject.org/rpms/gnome-shell-extension-pop-shell/): `sudo dnf install gnome-shell-extension-pop-shell xprop`
-- [Gentoo](https://packages.gentoo.org/packages/gnome-extra/gnome-shell-extension-pop-shell): `emerge gnome-shell-extension-pop-shell`
-- [openSUSE Tumbleweed](https://build.opensuse.org/package/show/openSUSE:Factory/gnome-shell-extension-pop-shell): `sudo zypper install gnome-shell-extension-pop-shell`
-- [Arch Linux](https://aur.archlinux.org/packages/?O=0&K=gnome-shell-extension-pop-shell) (Using Yay as AUR helper):
-    - `yay -S gnome-shell-extension-pop-shell`
-    - For precompiled binary version: `yay -S gnome-shell-extension-pop-shell-bin`
-    - For GitHub repository version: `yay -S gnome-shell-extension-pop-shell-git`
-
 ---
 
 ## Shared Features
