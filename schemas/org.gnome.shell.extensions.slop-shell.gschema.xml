@@ -3,12 +3,12 @@
     <schema id="org.gnome.shell.extensions.slop-shell" path="/org/gnome/shell/extensions/slop-shell/">
         <!-- Appearance Options -->
         <key type="u" name="gap-inner">
-            <default>2</default>
+            <default>5</default>
             <summary>Gap between tiled windows, in pixels</summary>
         </key>
 
         <key type="u" name="gap-outer">
-            <default>2</default>
+            <default>5</default>
             <summary>Gap surrounding tiled windows, in pixels</summary>
         </key>
 
