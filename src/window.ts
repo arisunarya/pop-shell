@@ -538,6 +538,13 @@ export class ShellWindow {
     }
 
     hide_border() {
+        // Cancel the re-show timer: otherwise a pending tick re-shows the
+        // border after it was hidden (e.g. on extension disable, where
+        // hide_all_borders() runs but nothing is left to hide it again).
+        if (ACTIVE_HINT_SHOW_ID !== null) {
+            GLib.source_remove(ACTIVE_HINT_SHOW_ID);
+            ACTIVE_HINT_SHOW_ID = null;
+        }
         let b = this.border;
         if (b) b.hide();
     }

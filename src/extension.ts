@@ -181,6 +181,11 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     was_locked: boolean = false;
 
+    /** Set while the extension is enabled. Show paths check this so that
+     *  callbacks still connected after disable (per-window Meta signals)
+     *  can never display indicators on a disabled extension. */
+    enabled: boolean = false;
+
     /** Set when a window is being moved by the mouse */
     moved_by_mouse: boolean = false;
 
@@ -949,6 +954,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     show_border_on_focused() {
         this.hide_all_borders();
+        if (!this.enabled) return;
         const focus = this.focus_window();
         if (focus) focus.show_border();
         this.refresh_stack_indicators();
@@ -2648,6 +2654,8 @@ export default class SlopShellExtension extends Extension {
             return;
         }
 
+        ext.enabled = true;
+
         ext.injections_add();
         ext.signals_attach();
 
@@ -2676,6 +2684,7 @@ export default class SlopShellExtension extends Extension {
             }
 
             delete globalThis.slopShellExtension;
+            ext.enabled = false;
             ext.injections_remove();
             ext.signals_remove();
             ext.exit_modes();
