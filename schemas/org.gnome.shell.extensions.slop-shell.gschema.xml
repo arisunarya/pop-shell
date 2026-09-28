@@ -222,12 +222,12 @@
         </key>
 
         <key type="as" name="slop-monitor-left">
-            <default><![CDATA[['<Super><Shift>Left','<Super><Shift>KP_Left','<Super><Shift>h']]]></default>
+            <default><![CDATA[['<Super><Shift><Primary>Left','<Super><Shift><Primary>KP_Left','<Super><Shift><Primary>h']]]></default>
             <summary>Move window to the leftward monitor</summary>
         </key>
 
         <key type="as" name="slop-monitor-right">
-            <default><![CDATA[['<Super><Shift>Right','<Super><Shift>KP_Right','<Super><Shift>l']]]></default>
+            <default><![CDATA[['<Super><Shift><Primary>Right','<Super><Shift><Primary>KP_Right','<Super><Shift><Primary>l']]]></default>
             <summary>Move window to the rightward monitor</summary>
         </key>
 
