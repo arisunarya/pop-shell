@@ -1,6 +1,7 @@
 import * as lib from './lib.js';
 import * as log from './log.js';
 import * as once_cell from './once_cell.js';
+import * as Overlay from './overlay.js';
 import * as Rect from './rectangle.js';
 import * as Tags from './tags.js';
 import * as utils from './utils.js';
@@ -10,7 +11,6 @@ import type { Ext } from './extension.js';
 import type { Rectangle } from './rectangle.js';
 import * as focus from './focus.js';
 
-import Gdk from 'gi://Gdk';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
@@ -164,29 +164,10 @@ export class ShellWindow {
     /**
      * Adjust the colors for:
      * - border hint
-     * - overlay
+     * (overlay hatch reads the hint color live and repaints itself)
      */
     private update_hint_colors() {
-        let settings = this.ext.settings;
-        const color_value = settings.hint_color_rgba();
-
-        if (this.ext.overlay) {
-            const gdk = new Gdk.RGBA();
-            // TODO Probably move overlay color/opacity to prefs.js in future,
-            // For now mimic the hint color with lower opacity
-            const overlay_alpha = 0.3;
-            const orig_overlay = 'rgba(53, 132, 228, 0.3)';
-            gdk.parse(color_value);
-
-            if (utils.is_dark(gdk.to_string())) {
-                // too dark, use the blue overlay
-                gdk.parse(orig_overlay);
-            }
-
-            gdk.alpha = overlay_alpha;
-            this.ext.overlay.set_style(`background: ${gdk.to_string()}`);
-        }
-
+        Overlay.refresh_overlay(this.ext.overlay);
         this.update_border_style();
     }
 

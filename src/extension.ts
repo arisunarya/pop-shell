@@ -16,6 +16,7 @@ import * as Window from './window.js';
 import * as auto_tiler from './auto_tiler.js';
 import * as node from './node.js';
 import * as utils from './utils.js';
+import * as Overlay from './overlay.js';
 import * as Executor from './executor.js';
 import * as movement from './movement.js';
 import * as stack from './stack.js';
@@ -107,8 +108,10 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     // Widgets
 
-    /** An overlay which shows a preview of where a window will be moved */
-    overlay: St.Widget = new St.BoxLayout({ style_class: 'slop-shell-overlay', visible: false });
+    /** An overlay which shows a preview of where a window will be moved.
+     *  Hatched diagonal stripes in the active hint color.
+     *  Shown in tiling adjustment mode (Super+Enter). */
+    overlay: St.Widget = Overlay.create_tiling_overlay(() => this.settings.hint_color_rgba());
 
     /** DBus */
     dbus: dbus_service.Service = new dbus_service.Service();
@@ -1829,6 +1832,7 @@ export class Ext extends Ecs.System<ExtEvent> {
         this.overlay.y = rect.y;
         this.overlay.width = rect.width;
         this.overlay.height = rect.height;
+        Overlay.refresh_overlay(this.overlay);
     }
 
     /** Begin listening for signals from windows, and add any pre-existing windows. */
